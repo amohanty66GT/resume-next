@@ -19,6 +19,7 @@ export const CertificationsSection = ({ data, onChange }: CertificationsSectionP
         name: "",
         issuer: "",
         date: "",
+        url: "",
       },
     ]);
   };
@@ -83,13 +84,25 @@ export const CertificationsSection = ({ data, onChange }: CertificationsSectionP
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Date Obtained</Label>
-              <Input
-                placeholder="January 2024"
-                value={cert.date}
-                onChange={(e) => updateCertification(cert.id, "date", e.target.value)}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date Obtained</Label>
+                <Input
+                  placeholder="January 2024"
+                  value={cert.date}
+                  onChange={(e) => updateCertification(cert.id, "date", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Credential URL (Optional)</Label>
+                <Input
+                  type="url"
+                  placeholder="https://credential-url.com"
+                  value={cert.url || ""}
+                  onChange={(e) => updateCertification(cert.id, "url", e.target.value)}
+                />
+              </div>
             </div>
           </div>
         ))}

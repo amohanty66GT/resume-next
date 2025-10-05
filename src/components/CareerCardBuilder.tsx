@@ -10,6 +10,7 @@ import { StylesOfWorkSection } from "./sections/StylesOfWorkSection";
 import { FrameworksSection } from "./sections/FrameworksSection";
 import { PastimesSection } from "./sections/PastimesSection";
 import { CareerCardPreview } from "./CareerCardPreview";
+import { ImportDataSection } from "./ImportDataSection";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 
@@ -38,6 +39,7 @@ export interface CareerCardData {
     name: string;
     issuer: string;
     date: string;
+    url?: string;
   }>;
   stylesOfWork: Array<{
     id: string;
@@ -146,6 +148,31 @@ const CareerCardBuilder = () => {
     setCardData({ ...cardData, pastimes });
   };
 
+  const handleImportedData = (importedData: any) => {
+    const newCardData = { ...cardData };
+
+    // Update profile if available
+    if (importedData.profile) {
+      newCardData.profile = {
+        ...newCardData.profile,
+        ...importedData.profile,
+      };
+    }
+
+    // Update experience if available
+    if (importedData.experience && Array.isArray(importedData.experience)) {
+      newCardData.experience = [...newCardData.experience, ...importedData.experience];
+    }
+
+    // Update certifications if available
+    if (importedData.certifications && Array.isArray(importedData.certifications)) {
+      newCardData.certifications = [...newCardData.certifications, ...importedData.certifications];
+    }
+
+    setCardData(newCardData);
+    toast.success("Data imported successfully!");
+  };
+
   return (
     <div className="min-h-screen bg-[hsl(var(--editor-bg))]">
       {/* Header */}
@@ -182,6 +209,7 @@ const CareerCardBuilder = () => {
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-6">
+            <ImportDataSection onDataImported={handleImportedData} />
             <ProfileSection data={cardData.profile} onChange={updateProfile} />
             <ExperienceSection data={cardData.experience} onChange={updateExperience} />
             <ProjectsSection data={cardData.projects} onChange={updateProjects} />
