@@ -3,9 +3,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Link2, Github, Loader2 } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import * as pdfjsLib from 'pdfjs-dist';
 
 interface ImportDataSectionProps {
   onDataImported: (data: any) => void;
@@ -13,8 +14,24 @@ interface ImportDataSectionProps {
 
 export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [linkedinUrl, setLinkedinUrl] = useState("");
-  const [githubUrl, setGithubUrl] = useState("");
+
+  // Set up PDF.js worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+  const extractTextFromPDF = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map((item: any) => item.str).join(' ');
+      fullText += pageText + '\n';
+    }
+
+    return fullText;
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -30,49 +47,20 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
     toast.loading("Parsing your resume...");
 
     try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64Data = e.target?.result as string;
-        
-        const { data, error } = await supabase.functions.invoke("parse-resume", {
-          body: { 
-            fileData: base64Data,
-            fileName: file.name,
-            linkedinUrl,
-            githubUrl
-          },
-        });
+      let extractedText = '';
 
-        if (error) throw error;
+      if (file.type === 'application/pdf') {
+        extractedText = await extractTextFromPDF(file);
+        console.log('Extracted text length:', extractedText.length);
+      } else {
+        toast.error("Only PDF files are supported");
+        setIsLoading(false);
+        return;
+      }
 
-        if (data) {
-          onDataImported(data);
-          toast.success("Resume parsed successfully!");
-        }
-      };
-      reader.readAsDataURL(file);
-    } catch (error: any) {
-      console.error("Error parsing resume:", error);
-      toast.error(error.message || "Failed to parse resume. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleImportFromUrls = async () => {
-    if (!linkedinUrl && !githubUrl) {
-      toast.error("Please provide at least a LinkedIn or GitHub URL");
-      return;
-    }
-
-    setIsLoading(true);
-    toast.loading("Importing data from profiles...");
-
-    try {
       const { data, error } = await supabase.functions.invoke("parse-resume", {
         body: { 
-          linkedinUrl,
-          githubUrl
+          resumeText: extractedText
         },
       });
 
@@ -80,11 +68,11 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
 
       if (data) {
         onDataImported(data);
-        toast.success("Profile data imported successfully!");
+        toast.success("Resume parsed successfully!");
       }
     } catch (error: any) {
-      console.error("Error importing profiles:", error);
-      toast.error(error.message || "Failed to import profiles. Please try again.");
+      console.error("Error parsing resume:", error);
+      toast.error(error.message || "Failed to parse resume. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +84,7 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
         <div>
           <h2 className="text-xl font-bold mb-2">Quick Import</h2>
           <p className="text-sm text-muted-foreground">
-            Upload your resume or import from LinkedIn/GitHub to auto-fill your career card
+            Upload your resume PDF to auto-fill your experience section
           </p>
         </div>
 
@@ -105,74 +93,28 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
           <div className="space-y-2">
             <Label htmlFor="resume-upload" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
-              Resume (PDF, DOCX)
+              Resume (PDF only)
             </Label>
             <Input
               id="resume-upload"
               type="file"
-              accept=".pdf,.doc,.docx"
+              accept=".pdf"
               onChange={handleFileUpload}
               disabled={isLoading}
               className="cursor-pointer"
             />
           </div>
 
-          {/* LinkedIn URL */}
-          <div className="space-y-2">
-            <Label htmlFor="linkedin-url" className="flex items-center gap-2">
-              <Link2 className="h-4 w-4" />
-              LinkedIn Profile URL (Optional)
-            </Label>
-            <Input
-              id="linkedin-url"
-              type="url"
-              placeholder="https://www.linkedin.com/in/yourprofile"
-              value={linkedinUrl}
-              onChange={(e) => setLinkedinUrl(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-
-          {/* GitHub URL */}
-          <div className="space-y-2">
-            <Label htmlFor="github-url" className="flex items-center gap-2">
-              <Github className="h-4 w-4" />
-              GitHub Profile URL (Optional)
-            </Label>
-            <Input
-              id="github-url"
-              type="url"
-              placeholder="https://github.com/yourusername"
-              value={githubUrl}
-              onChange={(e) => setGithubUrl(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-
-          {/* Import Button for URLs */}
-          {(linkedinUrl || githubUrl) && (
-            <Button 
-              onClick={handleImportFromUrls} 
-              disabled={isLoading}
-              className="w-full gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Importing...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4" />
-                  Import from URLs
-                </>
-              )}
-            </Button>
+          {isLoading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Extracting experience from resume...
+            </div>
           )}
         </div>
 
         <p className="text-xs text-muted-foreground">
-          <strong>Tip:</strong> For best results, provide your resume and LinkedIn profile together.
+          <strong>Tip:</strong> For best results, use a well-formatted resume with clear section headers.
         </p>
       </div>
     </Card>

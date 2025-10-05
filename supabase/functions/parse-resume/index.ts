@@ -11,125 +11,85 @@ serve(async (req) => {
   }
 
   try {
-    const { fileData, fileName, linkedinUrl, githubUrl } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
-    }
+    const { resumeText, linkedinUrl, githubUrl } = await req.json();
 
-    console.log('Processing resume parse request:', { fileName, linkedinUrl, githubUrl });
+    console.log('Processing resume parse request with text length:', resumeText?.length);
 
-    const systemPrompt = `You are a career data extraction expert. Extract and structure career information from resumes and professional profiles.
-
-Return ONLY valid JSON in this exact structure (no markdown, no explanations):
-{
-  "profile": {
-    "name": "Full Name",
-    "title": "Professional Title",
-    "location": "City, Country"
-  },
-  "experience": [
-    {
-      "title": "Job Title",
-      "company": "Company Name",
-      "period": "Start Date - End Date",
-      "description": "Brief description of responsibilities"
-    }
-  ],
-  "certifications": [
-    {
-      "name": "Certification Name",
-      "issuer": "Issuing Organization",
-      "date": "Date Obtained",
-      "url": "Credential URL (if available)"
-    }
-  ]
-}
-
-IMPORTANT: For certifications, always try to include the URL/link to the credential if it's available in the source data.`;
-
-    // Build the user message content
-    const userContent: any[] = [];
-    
-    let textPrompt = "Parse the following career information and extract structured data:\n\n";
-    
-    if (linkedinUrl) {
-      textPrompt += `LinkedIn URL: ${linkedinUrl}\n`;
-    }
-    
-    if (githubUrl) {
-      textPrompt += `GitHub URL: ${githubUrl}\n`;
-    }
-    
-    userContent.push({ type: 'text', text: textPrompt });
-    
-    // Add file data if present - properly formatted for multimodal input
-    if (fileData) {
-      console.log('Adding file data to request');
-      userContent.push({
-        type: 'image_url',
-        image_url: {
-          url: fileData
+    // Simple text-based parsing using regex patterns
+    const parseExperience = (text: string) => {
+      const experiences: any[] = [];
+      
+      // Common patterns for experience sections
+      const experiencePatterns = [
+        /(?:experience|employment|work history)/i,
+        /(?:professional experience)/i,
+      ];
+      
+      // Find where experience section starts
+      let experienceText = text;
+      for (const pattern of experiencePatterns) {
+        const match = text.match(pattern);
+        if (match && match.index) {
+          experienceText = text.substring(match.index);
+          break;
         }
-      });
-    }
+      }
+      
+      // Split by common job entry patterns
+      const jobEntries = experienceText.split(/\n(?=[A-Z][a-z]+\s+(?:\d{4}|present))/i);
+      
+      for (const entry of jobEntries.slice(0, 10)) { // Limit to 10 entries
+        // Try to extract job title, company, dates, and description
+        const lines = entry.split('\n').filter(line => line.trim());
+        if (lines.length < 2) continue;
+        
+        let title = '';
+        let company = '';
+        let period = '';
+        let description = '';
+        
+        // Look for dates pattern
+        const datePattern = /(\d{4}|\w+\s+\d{4})\s*[-–—]\s*(\d{4}|\w+\s+\d{4}|present)/i;
+        
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          
+          if (datePattern.test(line) && !period) {
+            period = line.match(datePattern)?.[0] || '';
+          } else if (!title && line.length > 0 && line.length < 100) {
+            title = line;
+          } else if (!company && line.length > 0 && line.length < 100 && line !== title) {
+            company = line;
+          } else if (line.length > 20) {
+            description += (description ? ' ' : '') + line;
+          }
+        }
+        
+        if (title && (company || period)) {
+          experiences.push({
+            id: crypto.randomUUID(),
+            title: title || 'Position',
+            company: company || 'Company',
+            period: period || 'Dates',
+            description: description.substring(0, 500) || 'Description'
+          });
+        }
+      }
+      
+      return experiences;
+    };
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
+    const parsedData = {
+      profile: {
+        name: "",
+        title: "",
+        location: ""
       },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userContent }
-        ],
-      }),
-    });
+      experience: resumeText ? parseExperience(resumeText) : [],
+      certifications: []
+    };
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
-    }
-
-    const aiResponse = await response.json();
-    const content = aiResponse.choices?.[0]?.message?.content;
-    
-    if (!content) {
-      throw new Error('No content in AI response');
-    }
-
-    console.log('AI Response:', content);
-
-    // Parse the JSON response
-    let parsedData;
-    try {
-      // Remove markdown code blocks if present
-      const jsonContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      parsedData = JSON.parse(jsonContent);
-    } catch (e) {
-      console.error('Failed to parse AI response as JSON:', content);
-      throw new Error('Failed to parse AI response');
-    }
-
-    // Add unique IDs to arrays
-    if (parsedData.experience) {
-      parsedData.experience = parsedData.experience.map((exp: any) => ({
-        ...exp,
-        id: crypto.randomUUID(),
-      }));
-    }
-
-    if (parsedData.certifications) {
-      parsedData.certifications = parsedData.certifications.map((cert: any) => ({
-        ...cert,
-        id: crypto.randomUUID(),
-      }));
-    }
+    console.log('Parsed experience entries:', parsedData.experience.length);
 
     return new Response(JSON.stringify(parsedData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
