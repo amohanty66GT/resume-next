@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Download, Eye, Edit3 } from "lucide-react";
@@ -11,6 +11,7 @@ import { FrameworksSection } from "./sections/FrameworksSection";
 import { PastimesSection } from "./sections/PastimesSection";
 import { CareerCardPreview } from "./CareerCardPreview";
 import { toast } from "sonner";
+import html2canvas from "html2canvas";
 
 export interface CareerCardData {
   profile: {
@@ -57,6 +58,8 @@ export interface CareerCardData {
 
 const CareerCardBuilder = () => {
   const [showPreview, setShowPreview] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
   const [cardData, setCardData] = useState<CareerCardData>({
     profile: {
       name: "",
@@ -72,8 +75,47 @@ const CareerCardBuilder = () => {
     pastimes: [],
   });
 
-  const handleExport = () => {
-    toast.success("Career card exported successfully!");
+  const handleExport = async () => {
+    if (!previewRef.current) {
+      // If not in preview mode, switch to it first
+      setShowPreview(true);
+      toast.info("Switching to preview mode...");
+      // Wait for the preview to render, then try again
+      setTimeout(() => handleExport(), 500);
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      toast.loading("Generating your career card image...");
+
+      // Capture the preview card as canvas
+      const canvas = await html2canvas(previewRef.current, {
+        backgroundColor: "#ffffff",
+        scale: 2, // Higher quality
+        logging: false,
+        useCORS: true,
+      });
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.download = `${cardData.profile.name || "career-card"}_${new Date().getTime()}.png`;
+          link.href = url;
+          link.click();
+          URL.revokeObjectURL(url);
+          
+          toast.success("Career card downloaded successfully!");
+        }
+      }, "image/png");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Failed to export career card. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const updateProfile = (profile: CareerCardData["profile"]) => {
@@ -124,9 +166,9 @@ const CareerCardBuilder = () => {
               {showPreview ? <Edit3 className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               {showPreview ? "Edit" : "Preview"}
             </Button>
-            <Button onClick={handleExport} className="gap-2">
+            <Button onClick={handleExport} className="gap-2" disabled={isExporting}>
               <Download className="h-4 w-4" />
-              Export Card
+              {isExporting ? "Exporting..." : "Export Card"}
             </Button>
           </div>
         </div>
@@ -135,7 +177,9 @@ const CareerCardBuilder = () => {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         {showPreview ? (
-          <CareerCardPreview data={cardData} />
+          <div ref={previewRef}>
+            <CareerCardPreview data={cardData} />
+          </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-6">
             <ProfileSection data={cardData.profile} onChange={updateProfile} />
