@@ -20,22 +20,6 @@ serve(async (req) => {
 
     console.log('Processing resume parse request:', { fileName, linkedinUrl, githubUrl });
 
-    // Build context for AI parsing
-    let contextPrompt = "Parse the following career information and extract structured data:\n\n";
-    
-    if (fileData) {
-      contextPrompt += `Resume file: ${fileName}\n`;
-      contextPrompt += `File data: ${fileData.substring(0, 100)}...\n\n`;
-    }
-    
-    if (linkedinUrl) {
-      contextPrompt += `LinkedIn URL: ${linkedinUrl}\n`;
-    }
-    
-    if (githubUrl) {
-      contextPrompt += `GitHub URL: ${githubUrl}\n`;
-    }
-
     const systemPrompt = `You are a career data extraction expert. Extract and structure career information from resumes and professional profiles.
 
 Return ONLY valid JSON in this exact structure (no markdown, no explanations):
@@ -65,6 +49,32 @@ Return ONLY valid JSON in this exact structure (no markdown, no explanations):
 
 IMPORTANT: For certifications, always try to include the URL/link to the credential if it's available in the source data.`;
 
+    // Build the user message content
+    const userContent: any[] = [];
+    
+    let textPrompt = "Parse the following career information and extract structured data:\n\n";
+    
+    if (linkedinUrl) {
+      textPrompt += `LinkedIn URL: ${linkedinUrl}\n`;
+    }
+    
+    if (githubUrl) {
+      textPrompt += `GitHub URL: ${githubUrl}\n`;
+    }
+    
+    userContent.push({ type: 'text', text: textPrompt });
+    
+    // Add file data if present - properly formatted for multimodal input
+    if (fileData) {
+      console.log('Adding file data to request');
+      userContent.push({
+        type: 'image_url',
+        image_url: {
+          url: fileData
+        }
+      });
+    }
+
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -75,7 +85,7 @@ IMPORTANT: For certifications, always try to include the URL/link to the credent
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: contextPrompt }
+          { role: 'user', content: userContent }
         ],
       }),
     });
