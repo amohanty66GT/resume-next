@@ -264,7 +264,7 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
   };
 
   const handleImportPortfolioData = (dataType: string) => {
-    if (!portfolioData) return;
+    if (!portfolioData && dataType !== 'code') return;
 
     const importData: any = {};
 
@@ -285,6 +285,27 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
         proficiency: fw.proficiency || 'Intermediate',
       }));
       toast.success(`Imported ${importData.frameworks.length} frameworks`);
+    }
+
+    if (dataType === 'code') {
+      // Import only selected code files
+      if (selectedCodeFiles.size > 0) {
+        importData.codeShowcase = Array.from(selectedCodeFiles).map(filePath => {
+          const file = codeFiles.find(f => f.path === filePath);
+          return {
+            id: Math.random().toString(36).substr(2, 9),
+            fileName: file.name,
+            language: file.language,
+            code: file.content,
+            repo: file.repo,
+            url: file.url,
+          };
+        });
+        toast.success(`Imported ${importData.codeShowcase.length} code snippet(s)`);
+      } else {
+        toast.error("Please select at least one code file");
+        return;
+      }
     }
 
     if (dataType === 'all') {
@@ -323,7 +344,9 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
     }
 
     onDataImported(importData);
-    setShowPortfolioPreview(false);
+    if (dataType !== 'code') {
+      setShowPortfolioPreview(false);
+    }
   };
 
   return (
@@ -367,6 +390,14 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
                     <FileCode className="h-5 w-5" />
                     Code Files ({codeFiles.length})
                   </h3>
+                  <Button 
+                    onClick={() => handleImportPortfolioData('code')} 
+                    size="sm"
+                    variant="outline"
+                    disabled={selectedCodeFiles.size === 0}
+                  >
+                    Import Selected Code
+                  </Button>
                 </div>
                 <p className="text-sm text-muted-foreground mb-3">
                   Select code files to showcase in your career card
