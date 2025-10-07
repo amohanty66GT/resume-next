@@ -198,6 +198,9 @@ export const CareerCardPreview = ({ data }: CareerCardPreviewProps) => {
                     <span className="text-xs text-muted-foreground">{snippet.language}</span>
                   </div>
                   {snippet.repo && <p className="text-xs text-muted-foreground">from {snippet.repo}</p>}
+                  {snippet.caption && (
+                    <p className="text-sm text-foreground/80 italic">{snippet.caption}</p>
+                  )}
                   <pre className="bg-muted p-3 rounded text-xs overflow-x-auto">
                     <code>{snippet.code}</code>
                   </pre>

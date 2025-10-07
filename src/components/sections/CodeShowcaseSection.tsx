@@ -27,6 +27,7 @@ export const CodeShowcaseSection = ({ data, onChange }: CodeShowcaseSectionProps
         fileName: "",
         language: "javascript",
         code: "",
+        caption: "",
         repo: "",
         url: "",
       },
@@ -125,6 +126,16 @@ export const CodeShowcaseSection = ({ data, onChange }: CodeShowcaseSectionProps
                   onChange={(e) => updateCodeSnippet(snippet.id, "url", e.target.value)}
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Caption</Label>
+              <Textarea
+                placeholder="Describe the code technically (e.g., 'Recursive algorithm for binary tree traversal with O(n) complexity')"
+                value={snippet.caption || ""}
+                onChange={(e) => updateCodeSnippet(snippet.id, "caption", e.target.value)}
+                className="min-h-[60px]"
+              />
             </div>
 
             <div className="space-y-2">

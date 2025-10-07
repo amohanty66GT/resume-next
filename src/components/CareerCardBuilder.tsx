@@ -62,6 +62,7 @@ export interface CareerCardData {
     fileName: string;
     language: string;
     code: string;
+    caption?: string;
     repo?: string;
     url?: string;
   }>;
