@@ -1,8 +1,12 @@
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { User, Upload, Loader2 } from "lucide-react";
 import { CareerCardData } from "../CareerCardBuilder";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useState, useRef } from "react";
 
 interface ProfileSectionProps {
   data: CareerCardData["profile"];
@@ -10,6 +14,65 @@ interface ProfileSectionProps {
 }
 
 export const ProfileSection = ({ data, onChange }: ProfileSectionProps) => {
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      
+      // Create a unique file name
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("profile-images")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("profile-images")
+        .getPublicUrl(filePath);
+
+      // Update the profile data with the new image URL
+      onChange({ ...data, imageUrl: publicUrl });
+      toast.success("Profile image uploaded successfully!");
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload image. Please try again.");
+    } finally {
+      setIsUploading(false);
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   return (
     <Card className="p-6 shadow-[var(--shadow-card)]">
       <div className="flex items-center gap-3 mb-6">
@@ -54,13 +117,45 @@ export const ProfileSection = ({ data, onChange }: ProfileSectionProps) => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="imageUrl">Profile Image URL</Label>
-          <Input
-            id="imageUrl"
-            placeholder="https://example.com/photo.jpg"
-            value={data.imageUrl}
-            onChange={(e) => onChange({ ...data, imageUrl: e.target.value })}
-          />
+          <Label htmlFor="profileImage">Profile Image</Label>
+          <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              id="profileImage"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="w-full"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Photo
+                </>
+              )}
+            </Button>
+          </div>
+          {data.imageUrl && (
+            <div className="mt-2">
+              <img
+                src={data.imageUrl}
+                alt="Profile preview"
+                className="w-20 h-20 rounded-full object-cover border-2 border-border"
+              />
+            </div>
+          )}
         </div>
       </div>
     </Card>
