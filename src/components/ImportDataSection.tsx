@@ -22,6 +22,7 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
   const [isLoading, setIsLoading] = useState(false);
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [pdfDocument, setPdfDocument] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+  const [extractedText, setExtractedText] = useState<string>("");
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   // Set up PDF.js worker
@@ -84,6 +85,41 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
     renderPages();
   }, [showResumeDialog, pdfDocument]);
 
+  const extractTextFromPDF = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<string> => {
+    let fullText = "";
+    
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(" ");
+      fullText += pageText + "\n\n";
+    }
+    
+    return fullText;
+  };
+
+  const handleCopyToExperience = () => {
+    if (!extractedText) {
+      toast.error("No text extracted from resume");
+      return;
+    }
+
+    // Send the extracted text to the parent component
+    onDataImported({
+      experience: [{
+        title: "",
+        company: "",
+        period: "",
+        description: extractedText.trim()
+      }]
+    });
+
+    toast.success("Text copied to Experience section - you can now edit and format it");
+    setShowResumeDialog(false);
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -102,6 +138,11 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         setPdfDocument(pdf);
+        
+        // Extract text from PDF
+        const text = await extractTextFromPDF(pdf);
+        setExtractedText(text);
+        
         setShowResumeDialog(true);
         toast.success("Resume loaded! You can now view and reference it while filling the form.");
       } else {
@@ -166,9 +207,14 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
               {/* PDF pages will be rendered here */}
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Reference your resume above while filling out the form fields below.
-          </p>
+          <div className="flex items-center justify-between pt-4 border-t">
+            <p className="text-xs text-muted-foreground">
+              Click the button to copy all text from your resume to the Experience section
+            </p>
+            <Button onClick={handleCopyToExperience} variant="default">
+              Copy to Experience
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>
