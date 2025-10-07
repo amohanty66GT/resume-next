@@ -26,6 +26,9 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
   const [pdfDocument, setPdfDocument] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [extractedText, setExtractedText] = useState<string>("");
   const [portfolioUrl, setPortfolioUrl] = useState("");
+  const [portfolioData, setPortfolioData] = useState<any>(null);
+  const [showPortfolioPreview, setShowPortfolioPreview] = useState(false);
+  const [isParsingPortfolio, setIsParsingPortfolio] = useState(false);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   // URL validation schema
@@ -188,7 +191,7 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
     }
   };
 
-  const handlePortfolioSubmit = () => {
+  const handlePortfolioSubmit = async () => {
     const trimmedUrl = portfolioUrl.trim();
     
     if (!trimmedUrl) {
@@ -203,15 +206,91 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
       return;
     }
 
-    // Send the portfolio URL to the parent component
-    onDataImported({
-      profile: {
-        portfolioUrl: trimmedUrl
-      }
-    });
+    try {
+      setIsParsingPortfolio(true);
+      toast.loading("Fetching portfolio content...");
 
-    toast.success("Portfolio URL added to your profile!");
-    setPortfolioUrl("");
+      const { supabase } = await import("@/integrations/supabase/client");
+
+      const { data, error } = await supabase.functions.invoke('parse-portfolio', {
+        body: { portfolioUrl: trimmedUrl }
+      });
+
+      if (error) {
+        console.error('Error parsing portfolio:', error);
+        throw error;
+      }
+
+      console.log('Portfolio data:', data);
+
+      if (data?.success && data?.data) {
+        setPortfolioData(data.data);
+        setShowPortfolioPreview(true);
+        
+        // Also save the URL to profile
+        onDataImported({
+          profile: {
+            portfolioUrl: trimmedUrl
+          }
+        });
+
+        toast.success("Portfolio content loaded! Review and import what you need.");
+      } else {
+        throw new Error(data?.error || 'Failed to parse portfolio');
+      }
+    } catch (error: any) {
+      console.error('Error processing portfolio:', error);
+      toast.error(error.message || "Failed to parse portfolio URL");
+    } finally {
+      setIsParsingPortfolio(false);
+    }
+  };
+
+  const handleImportPortfolioData = (dataType: string) => {
+    if (!portfolioData) return;
+
+    const importData: any = {};
+
+    if (dataType === 'projects' && portfolioData.projects) {
+      importData.projects = portfolioData.projects.map((project: any) => ({
+        id: Math.random().toString(36).substr(2, 9),
+        name: project.name || '',
+        description: project.description || '',
+        technologies: project.technologies || '',
+      }));
+      toast.success(`Imported ${importData.projects.length} projects`);
+    }
+
+    if (dataType === 'frameworks' && portfolioData.frameworks) {
+      importData.frameworks = portfolioData.frameworks.map((fw: any) => ({
+        id: Math.random().toString(36).substr(2, 9),
+        name: fw.name || '',
+        proficiency: fw.proficiency || 'Intermediate',
+      }));
+      toast.success(`Imported ${importData.frameworks.length} frameworks`);
+    }
+
+    if (dataType === 'all') {
+      if (portfolioData.projects) {
+        importData.projects = portfolioData.projects.map((project: any) => ({
+          id: Math.random().toString(36).substr(2, 9),
+          name: project.name || '',
+          description: project.description || '',
+          technologies: project.technologies || '',
+        }));
+      }
+      if (portfolioData.frameworks) {
+        importData.frameworks = portfolioData.frameworks.map((fw: any) => ({
+          id: Math.random().toString(36).substr(2, 9),
+          name: fw.name || '',
+          proficiency: fw.proficiency || 'Intermediate',
+        }));
+      }
+      toast.success("Imported all available data from portfolio");
+    }
+
+    onDataImported(importData);
+    setShowPortfolioPreview(false);
   };
 
   return (
@@ -275,10 +354,17 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
                 />
                 <Button 
                   onClick={handlePortfolioSubmit}
-                  disabled={!portfolioUrl.trim()}
+                  disabled={!portfolioUrl.trim() || isParsingPortfolio}
                   size="sm"
                 >
-                  Add
+                  {isParsingPortfolio ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Parsing...
+                    </>
+                  ) : (
+                    "Preview"
+                  )}
                 </Button>
               </div>
             </div>
@@ -316,6 +402,94 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
               ) : (
                 "Parse Experience"
               )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showPortfolioPreview} onOpenChange={setShowPortfolioPreview}>
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Portfolio Preview</DialogTitle>
+            <DialogDescription>
+              Review the extracted data and import what you need
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto space-y-6 p-4">
+            {portfolioData?.profile && (
+              <div className="space-y-2">
+                <h3 className="font-semibold text-lg">Profile Information</h3>
+                <div className="bg-muted/30 p-4 rounded-lg space-y-2">
+                  {portfolioData.profile.name && (
+                    <p><span className="font-medium">Name:</span> {portfolioData.profile.name}</p>
+                  )}
+                  {portfolioData.profile.title && (
+                    <p><span className="font-medium">Title:</span> {portfolioData.profile.title}</p>
+                  )}
+                  {portfolioData.profile.bio && (
+                    <p><span className="font-medium">Bio:</span> {portfolioData.profile.bio}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {portfolioData?.projects && portfolioData.projects.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">Projects ({portfolioData.projects.length})</h3>
+                  <Button 
+                    onClick={() => handleImportPortfolioData('projects')} 
+                    size="sm"
+                    variant="outline"
+                  >
+                    Import Projects
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {portfolioData.projects.map((project: any, idx: number) => (
+                    <div key={idx} className="bg-muted/30 p-4 rounded-lg space-y-1">
+                      <h4 className="font-semibold">{project.name}</h4>
+                      <p className="text-sm text-muted-foreground">{project.description}</p>
+                      {project.technologies && (
+                        <p className="text-xs text-primary">{project.technologies}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {portfolioData?.frameworks && portfolioData.frameworks.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">Frameworks & Technologies ({portfolioData.frameworks.length})</h3>
+                  <Button 
+                    onClick={() => handleImportPortfolioData('frameworks')} 
+                    size="sm"
+                    variant="outline"
+                  >
+                    Import Frameworks
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {portfolioData.frameworks.map((fw: any, idx: number) => (
+                    <div key={idx} className="bg-muted/30 p-3 rounded-lg flex justify-between items-center">
+                      <span className="font-medium">{fw.name}</span>
+                      {fw.proficiency && (
+                        <span className="text-xs text-muted-foreground">{fw.proficiency}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-4 border-t">
+            <Button onClick={() => setShowPortfolioPreview(false)} variant="outline">
+              Close
+            </Button>
+            <Button onClick={() => handleImportPortfolioData('all')}>
+              Import All
             </Button>
           </div>
         </DialogContent>

@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.parse-resume-experience]
 verify_jwt = false
+
+[functions.parse-portfolio]
+verify_jwt = false
