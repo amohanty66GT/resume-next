@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Loader2, X, Link as LinkIcon } from "lucide-react";
+import { Upload, Loader2, X, Link as LinkIcon, FileCode } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import * as pdfjsLib from 'pdfjs-dist';
@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ImportDataSectionProps {
   onDataImported: (data: any) => void;
@@ -27,6 +28,8 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
   const [extractedText, setExtractedText] = useState<string>("");
   const [portfolioUrl, setPortfolioUrl] = useState("");
   const [portfolioData, setPortfolioData] = useState<any>(null);
+  const [codeFiles, setCodeFiles] = useState<any[]>([]);
+  const [selectedCodeFiles, setSelectedCodeFiles] = useState<Set<string>>(new Set());
   const [showPortfolioPreview, setShowPortfolioPreview] = useState(false);
   const [isParsingPortfolio, setIsParsingPortfolio] = useState(false);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -225,6 +228,8 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
 
       if (data?.success && data?.data) {
         setPortfolioData(data.data);
+        setCodeFiles(data.codeFiles || []);
+        setSelectedCodeFiles(new Set());
         setShowPortfolioPreview(true);
         
         // Also save the URL to profile
@@ -234,7 +239,7 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
           }
         });
 
-        toast.success("Portfolio content loaded! Review and import what you need.");
+        toast.success("Portfolio content loaded! Review and select code to showcase.");
       } else {
         throw new Error(data?.error || 'Failed to parse portfolio');
       }
@@ -244,6 +249,18 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
     } finally {
       setIsParsingPortfolio(false);
     }
+  };
+
+  const toggleCodeFileSelection = (filePath: string) => {
+    setSelectedCodeFiles(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(filePath)) {
+        newSet.delete(filePath);
+      } else {
+        newSet.add(filePath);
+      }
+      return newSet;
+    });
   };
 
   const handleImportPortfolioData = (dataType: string) => {
@@ -286,7 +303,23 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
           proficiency: fw.proficiency || 'Intermediate',
         }));
       }
-      toast.success("Imported all available data from portfolio");
+      
+      // Import selected code files
+      if (selectedCodeFiles.size > 0) {
+        importData.codeShowcase = Array.from(selectedCodeFiles).map(filePath => {
+          const file = codeFiles.find(f => f.path === filePath);
+          return {
+            id: Math.random().toString(36).substr(2, 9),
+            fileName: file.name,
+            language: file.language,
+            code: file.content,
+            repo: file.repo,
+            url: file.url,
+          };
+        });
+      }
+      
+      toast.success("Imported all selected data from portfolio");
     }
 
     onDataImported(importData);
@@ -324,6 +357,47 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Loading resume...
+              </div>
+            )}
+
+            {codeFiles && codeFiles.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <FileCode className="h-5 w-5" />
+                    Code Files ({codeFiles.length})
+                  </h3>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Select code files to showcase in your career card
+                </p>
+                <div className="space-y-2 max-h-[300px] overflow-auto">
+                  {codeFiles.map((file: any, idx: number) => (
+                    <div 
+                      key={idx} 
+                      className="flex items-start gap-3 p-3 border rounded-lg hover:bg-muted/30 cursor-pointer"
+                      onClick={() => toggleCodeFileSelection(file.path)}
+                    >
+                      <Checkbox 
+                        checked={selectedCodeFiles.has(file.path)}
+                        onCheckedChange={() => toggleCodeFileSelection(file.path)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm">{file.name}</p>
+                          <span className="text-xs text-muted-foreground">({file.language})</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{file.repo}</p>
+                        <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-x-auto">
+                          <code>{file.content.slice(0, 200)}...</code>
+                        </pre>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {selectedCodeFiles.size} file(s) selected
+                </p>
               </div>
             )}
           </div>

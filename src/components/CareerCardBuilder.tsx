@@ -9,6 +9,7 @@ import { GreatestImpactsSection } from "./sections/GreatestImpactsSection";
 import { StylesOfWorkSection } from "./sections/StylesOfWorkSection";
 import { FrameworksSection } from "./sections/FrameworksSection";
 import { PastimesSection } from "./sections/PastimesSection";
+import { CodeShowcaseSection } from "./sections/CodeShowcaseSection";
 import { CareerCardPreview } from "./CareerCardPreview";
 import { ImportDataSection } from "./ImportDataSection";
 import { toast } from "sonner";
@@ -56,6 +57,14 @@ export interface CareerCardData {
     activity: string;
     description: string;
   }>;
+  codeShowcase: Array<{
+    id: string;
+    fileName: string;
+    language: string;
+    code: string;
+    repo?: string;
+    url?: string;
+  }>;
 }
 
 const CareerCardBuilder = () => {
@@ -76,6 +85,7 @@ const CareerCardBuilder = () => {
     stylesOfWork: [],
     frameworks: [],
     pastimes: [],
+    codeShowcase: [],
   });
 
   const handleExport = async () => {
@@ -149,6 +159,10 @@ const CareerCardBuilder = () => {
     setCardData({ ...cardData, pastimes });
   };
 
+  const updateCodeShowcase = (codeShowcase: CareerCardData["codeShowcase"]) => {
+    setCardData({ ...cardData, codeShowcase });
+  };
+
   const handleImportedData = (importedData: any) => {
     const newCardData = { ...cardData };
 
@@ -168,6 +182,11 @@ const CareerCardBuilder = () => {
     // Update greatestImpacts if available
     if (importedData.greatestImpacts && Array.isArray(importedData.greatestImpacts)) {
       newCardData.greatestImpacts = [...newCardData.greatestImpacts, ...importedData.greatestImpacts];
+    }
+
+    // Update codeShowcase if available
+    if (importedData.codeShowcase && Array.isArray(importedData.codeShowcase)) {
+      newCardData.codeShowcase = [...newCardData.codeShowcase, ...importedData.codeShowcase];
     }
 
     setCardData(newCardData);
@@ -218,6 +237,7 @@ const CareerCardBuilder = () => {
             <StylesOfWorkSection data={cardData.stylesOfWork} onChange={updateStylesOfWork} />
             <FrameworksSection data={cardData.frameworks} onChange={updateFrameworks} />
             <PastimesSection data={cardData.pastimes} onChange={updatePastimes} />
+            <CodeShowcaseSection data={cardData.codeShowcase} onChange={updateCodeShowcase} />
           </div>
         )}
       </div>

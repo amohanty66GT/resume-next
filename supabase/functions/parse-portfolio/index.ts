@@ -21,6 +21,69 @@ serve(async (req) => {
       );
     }
 
+    // Check if it's a GitHub URL
+    const isGitHub = portfolioUrl.includes('github.com');
+    let codeFiles: any[] = [];
+
+    if (isGitHub) {
+      // Extract username from GitHub URL
+      const match = portfolioUrl.match(/github\.com\/([^\/]+)/);
+      if (match) {
+        const username = match[1];
+        console.log('Fetching GitHub repos for:', username);
+
+        // Fetch user's repositories
+        const reposResponse = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=10`, {
+          headers: {
+            'User-Agent': 'PortfolioParser/1.0',
+          },
+        });
+
+        if (reposResponse.ok) {
+          const repos = await reposResponse.json();
+          
+          // For each repo, fetch some code files
+          for (const repo of repos.slice(0, 5)) { // Limit to 5 repos
+            try {
+              const contentsResponse = await fetch(`https://api.github.com/repos/${username}/${repo.name}/contents`, {
+                headers: {
+                  'User-Agent': 'PortfolioParser/1.0',
+                },
+              });
+
+              if (contentsResponse.ok) {
+                const contents = await contentsResponse.json();
+                
+                // Find code files (js, ts, py, java, etc.)
+                const codeExtensions = ['.js', '.ts', '.tsx', '.jsx', '.py', '.java', '.cpp', '.c', '.go', '.rs', '.rb'];
+                const codeFilesList = contents.filter((file: any) => 
+                  file.type === 'file' && codeExtensions.some(ext => file.name.endsWith(ext))
+                ).slice(0, 3); // Max 3 files per repo
+
+                // Fetch the actual content of each file
+                for (const file of codeFilesList) {
+                  const fileResponse = await fetch(file.download_url);
+                  if (fileResponse.ok) {
+                    const fileContent = await fileResponse.text();
+                    codeFiles.push({
+                      name: file.name,
+                      path: `${repo.name}/${file.name}`,
+                      language: file.name.split('.').pop(),
+                      content: fileContent.slice(0, 2000), // Limit to 2000 chars
+                      repo: repo.name,
+                      url: file.html_url,
+                    });
+                  }
+                }
+              }
+            } catch (error) {
+              console.error(`Error fetching contents for ${repo.name}:`, error);
+            }
+          }
+        }
+      }
+    }
+
     // Fetch the portfolio website
     const websiteResponse = await fetch(portfolioUrl, {
       headers: {
@@ -137,6 +200,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         data: parsedData,
+        codeFiles: codeFiles,
         sourceUrl: portfolioUrl,
       }),
       {

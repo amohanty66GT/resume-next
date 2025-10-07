@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Briefcase, FolderGit2, Sparkles, Workflow, Code2, Heart, ExternalLink } from "lucide-react";
+import { MapPin, Briefcase, FolderGit2, Sparkles, Workflow, Code2, Heart, ExternalLink, FileCode } from "lucide-react";
 import { CareerCardData } from "./CareerCardBuilder";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
@@ -174,6 +174,44 @@ export const CareerCardPreview = ({ data }: CareerCardPreviewProps) => {
                 <div key={pastime.id} className="space-y-1">
                   <h4 className="font-semibold text-foreground">{pastime.activity}</h4>
                   <p className="text-sm text-foreground/80">{pastime.description}</p>
+                </div>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {/* Code Showcase Section */}
+        {data.codeShowcase.length > 0 && (
+          <Collapsible open={openSections.includes("code")} onOpenChange={() => toggleSection("code")}>
+            <CollapsibleTrigger className="w-full px-6 py-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <FileCode className="h-5 w-5 text-[hsl(var(--section-icon))]" />
+                <span className="font-semibold">Code Showcase</span>
+              </div>
+              <ChevronDown className={`h-5 w-5 transition-transform ${openSections.includes("code") ? "rotate-180" : ""}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="px-6 py-4 space-y-4">
+              {data.codeShowcase.map((snippet) => (
+                <div key={snippet.id} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-foreground">{snippet.fileName}</h4>
+                    <span className="text-xs text-muted-foreground">{snippet.language}</span>
+                  </div>
+                  {snippet.repo && <p className="text-xs text-muted-foreground">from {snippet.repo}</p>}
+                  <pre className="bg-muted p-3 rounded text-xs overflow-x-auto">
+                    <code>{snippet.code}</code>
+                  </pre>
+                  {snippet.url && (
+                    <a 
+                      href={snippet.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      View on GitHub
+                    </a>
+                  )}
                 </div>
               ))}
             </CollapsibleContent>
