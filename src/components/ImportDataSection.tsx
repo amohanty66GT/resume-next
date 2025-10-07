@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 
 interface ImportDataSectionProps {
@@ -201,9 +202,12 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Your Resume Preview</DialogTitle>
+            <DialogDescription>
+              View your resume and copy text to the Experience section
+            </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-auto bg-muted/30 p-4 rounded-lg">
-            <div ref={canvasContainerRef} className="flex flex-col items-center">
+          <div className="flex-1 overflow-auto bg-muted/30 p-4 rounded-lg min-h-[400px]">
+            <div ref={canvasContainerRef} className="flex flex-col items-center w-full">
               {/* PDF pages will be rendered here */}
             </div>
           </div>
