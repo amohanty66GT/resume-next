@@ -101,24 +101,50 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
     return fullText;
   };
 
-  const handleCopyToExperience = () => {
+  const handleCopyToExperience = async () => {
     if (!extractedText) {
       toast.error("No text extracted from resume");
       return;
     }
 
-    // Send the extracted text to the parent component
-    onDataImported({
-      experience: [{
-        title: "",
-        company: "",
-        period: "",
-        description: extractedText.trim()
-      }]
-    });
+    try {
+      setIsLoading(true);
+      toast.loading("Parsing your experience...");
 
-    toast.success("Text copied to Experience section - you can now edit and format it");
-    setShowResumeDialog(false);
+      // Import supabase client
+      const { supabase } = await import("@/integrations/supabase/client");
+
+      const { data, error } = await supabase.functions.invoke('parse-resume-experience', {
+        body: { resumeText: extractedText }
+      });
+
+      if (error) {
+        console.error('Error parsing resume:', error);
+        throw error;
+      }
+
+      console.log('Parsed data:', data);
+
+      const experiences = data?.experiences || [];
+
+      if (experiences.length === 0) {
+        toast.error("No experience entries found in resume");
+        return;
+      }
+
+      // Send the structured experience data to the parent component
+      onDataImported({
+        experience: experiences
+      });
+
+      toast.success(`Added ${experiences.length} experience ${experiences.length === 1 ? 'entry' : 'entries'} to your card`);
+      setShowResumeDialog(false);
+    } catch (error: any) {
+      console.error('Error processing resume:', error);
+      toast.error(error.message || "Failed to parse resume");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,10 +239,17 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
           </div>
           <div className="flex items-center justify-between pt-4 border-t">
             <p className="text-xs text-muted-foreground">
-              Click the button to copy all text from your resume to the Experience section
+              AI will extract and parse your experience entries automatically
             </p>
-            <Button onClick={handleCopyToExperience} variant="default">
-              Copy to Experience
+            <Button onClick={handleCopyToExperience} variant="default" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Parsing...
+                </>
+              ) : (
+                "Parse Experience"
+              )}
             </Button>
           </div>
         </DialogContent>
