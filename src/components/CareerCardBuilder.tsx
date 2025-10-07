@@ -20,6 +20,7 @@ export interface CareerCardData {
     title: string;
     location: string;
     imageUrl: string;
+    portfolioUrl?: string;
   };
   experience: Array<{
     id: string;
@@ -67,6 +68,7 @@ const CareerCardBuilder = () => {
       title: "",
       location: "",
       imageUrl: "",
+      portfolioUrl: "",
     },
     experience: [],
     projects: [],

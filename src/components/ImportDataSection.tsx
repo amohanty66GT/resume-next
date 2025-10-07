@@ -3,8 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Loader2, X } from "lucide-react";
+import { Upload, Loader2, X, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import {
@@ -24,7 +25,11 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [pdfDocument, setPdfDocument] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [extractedText, setExtractedText] = useState<string>("");
+  const [portfolioUrl, setPortfolioUrl] = useState("");
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+
+  // URL validation schema
+  const urlSchema = z.string().url({ message: "Please enter a valid URL" });
 
   // Set up PDF.js worker
   pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -183,6 +188,32 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
     }
   };
 
+  const handlePortfolioSubmit = () => {
+    const trimmedUrl = portfolioUrl.trim();
+    
+    if (!trimmedUrl) {
+      toast.error("Please enter a portfolio URL");
+      return;
+    }
+
+    // Validate URL
+    const validation = urlSchema.safeParse(trimmedUrl);
+    if (!validation.success) {
+      toast.error("Please enter a valid URL (e.g., https://github.com/username)");
+      return;
+    }
+
+    // Send the portfolio URL to the parent component
+    onDataImported({
+      profile: {
+        portfolioUrl: trimmedUrl
+      }
+    });
+
+    toast.success("Portfolio URL added to your profile!");
+    setPortfolioUrl("");
+  };
+
   return (
     <>
       <Card className="p-6 shadow-[var(--shadow-card)] border-2 border-dashed border-primary/20">
@@ -216,6 +247,41 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
                 Loading resume...
               </div>
             )}
+          </div>
+
+          <div className="space-y-4 pt-4 border-t">
+            <div className="space-y-2">
+              <Label htmlFor="portfolio-url" className="flex items-center gap-2">
+                <LinkIcon className="h-4 w-4" />
+                Portfolio URL
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Add your GitHub, UI/UX portfolio, marketing portfolio, or any public portfolio link
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  id="portfolio-url"
+                  type="url"
+                  placeholder="https://github.com/username or https://yourportfolio.com"
+                  value={portfolioUrl}
+                  onChange={(e) => setPortfolioUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handlePortfolioSubmit();
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handlePortfolioSubmit}
+                  disabled={!portfolioUrl.trim()}
+                  size="sm"
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
           </div>
 
           <p className="text-xs text-muted-foreground">

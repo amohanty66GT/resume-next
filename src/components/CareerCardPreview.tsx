@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Briefcase, FolderGit2, Sparkles, Workflow, Code2, Heart } from "lucide-react";
+import { MapPin, Briefcase, FolderGit2, Sparkles, Workflow, Code2, Heart, ExternalLink } from "lucide-react";
 import { CareerCardData } from "./CareerCardBuilder";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
@@ -33,10 +33,21 @@ export const CareerCardPreview = ({ data }: CareerCardPreviewProps) => {
           <h2 className="text-2xl font-bold text-foreground mb-1">{data.profile.name || "Your Name"}</h2>
           <p className="text-muted-foreground mb-2">{data.profile.title || "Your Title"}</p>
           {data.profile.location && (
-            <div className="flex items-center justify-center gap-1 text-sm text-primary">
+            <div className="flex items-center justify-center gap-1 text-sm text-primary mb-2">
               <MapPin className="h-4 w-4" />
               {data.profile.location}
             </div>
+          )}
+          {data.profile.portfolioUrl && (
+            <a 
+              href={data.profile.portfolioUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+            >
+              <ExternalLink className="h-3 w-3" />
+              View Portfolio
+            </a>
           )}
         </div>
 
