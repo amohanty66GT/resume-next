@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Briefcase, FolderGit2, Award, Workflow, Code2, Heart } from "lucide-react";
+import { MapPin, Briefcase, FolderGit2, Sparkles, Workflow, Code2, Heart } from "lucide-react";
 import { CareerCardData } from "./CareerCardBuilder";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
@@ -84,21 +84,22 @@ export const CareerCardPreview = ({ data }: CareerCardPreviewProps) => {
           </Collapsible>
         )}
 
-        {/* Certifications Section */}
-        {data.certifications.length > 0 && (
-          <Collapsible open={openSections.includes("certifications")} onOpenChange={() => toggleSection("certifications")}>
+        {/* Greatest Impacts Section */}
+        {data.greatestImpacts.length > 0 && (
+          <Collapsible open={openSections.includes("impacts")} onOpenChange={() => toggleSection("impacts")}>
             <CollapsibleTrigger className="w-full px-6 py-4 flex items-center justify-between hover:bg-muted/50 transition-colors border-b">
               <div className="flex items-center gap-3">
-                <Award className="h-5 w-5 text-[hsl(var(--section-icon))]" />
-                <span className="font-semibold">Certifications</span>
+                <Sparkles className="h-5 w-5 text-[hsl(var(--section-icon))]" />
+                <span className="font-semibold">Greatest Impacts</span>
               </div>
-              <ChevronDown className={`h-5 w-5 transition-transform ${openSections.includes("certifications") ? "rotate-180" : ""}`} />
+              <ChevronDown className={`h-5 w-5 transition-transform ${openSections.includes("impacts") ? "rotate-180" : ""}`} />
             </CollapsibleTrigger>
             <CollapsibleContent className="px-6 py-4 space-y-4 border-b">
-              {data.certifications.map((cert) => (
-                <div key={cert.id} className="space-y-1">
-                  <h4 className="font-semibold text-foreground">{cert.name}</h4>
-                  <p className="text-sm text-muted-foreground">{cert.issuer} • {cert.date}</p>
+              {data.greatestImpacts.map((impact) => (
+                <div key={impact.id} className="space-y-1">
+                  <h4 className="font-semibold text-foreground">{impact.title}</h4>
+                  <p className="text-sm text-muted-foreground">{impact.context}</p>
+                  {impact.outcome && <p className="text-sm text-foreground/80">{impact.outcome}</p>}
                 </div>
               ))}
             </CollapsibleContent>

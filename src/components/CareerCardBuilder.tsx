@@ -5,7 +5,7 @@ import { Download, Eye, Edit3 } from "lucide-react";
 import { ProfileSection } from "./sections/ProfileSection";
 import { ExperienceSection } from "./sections/ExperienceSection";
 import { ProjectsSection } from "./sections/ProjectsSection";
-import { CertificationsSection } from "./sections/CertificationsSection";
+import { GreatestImpactsSection } from "./sections/GreatestImpactsSection";
 import { StylesOfWorkSection } from "./sections/StylesOfWorkSection";
 import { FrameworksSection } from "./sections/FrameworksSection";
 import { PastimesSection } from "./sections/PastimesSection";
@@ -34,12 +34,11 @@ export interface CareerCardData {
     description: string;
     technologies: string;
   }>;
-  certifications: Array<{
+  greatestImpacts: Array<{
     id: string;
-    name: string;
-    issuer: string;
-    date: string;
-    url?: string;
+    title: string;
+    context: string;
+    outcome?: string;
   }>;
   stylesOfWork: Array<{
     id: string;
@@ -71,7 +70,7 @@ const CareerCardBuilder = () => {
     },
     experience: [],
     projects: [],
-    certifications: [],
+    greatestImpacts: [],
     stylesOfWork: [],
     frameworks: [],
     pastimes: [],
@@ -132,8 +131,8 @@ const CareerCardBuilder = () => {
     setCardData({ ...cardData, projects });
   };
 
-  const updateCertifications = (certifications: CareerCardData["certifications"]) => {
-    setCardData({ ...cardData, certifications });
+  const updateGreatestImpacts = (greatestImpacts: CareerCardData["greatestImpacts"]) => {
+    setCardData({ ...cardData, greatestImpacts });
   };
 
   const updateStylesOfWork = (stylesOfWork: CareerCardData["stylesOfWork"]) => {
@@ -164,9 +163,9 @@ const CareerCardBuilder = () => {
       newCardData.experience = [...newCardData.experience, ...importedData.experience];
     }
 
-    // Update certifications if available
-    if (importedData.certifications && Array.isArray(importedData.certifications)) {
-      newCardData.certifications = [...newCardData.certifications, ...importedData.certifications];
+    // Update greatestImpacts if available
+    if (importedData.greatestImpacts && Array.isArray(importedData.greatestImpacts)) {
+      newCardData.greatestImpacts = [...newCardData.greatestImpacts, ...importedData.greatestImpacts];
     }
 
     setCardData(newCardData);
@@ -213,7 +212,7 @@ const CareerCardBuilder = () => {
             <ProfileSection data={cardData.profile} onChange={updateProfile} />
             <ExperienceSection data={cardData.experience} onChange={updateExperience} />
             <ProjectsSection data={cardData.projects} onChange={updateProjects} />
-            <CertificationsSection data={cardData.certifications} onChange={updateCertifications} />
+            <GreatestImpactsSection data={cardData.greatestImpacts} onChange={updateGreatestImpacts} />
             <StylesOfWorkSection data={cardData.stylesOfWork} onChange={updateStylesOfWork} />
             <FrameworksSection data={cardData.frameworks} onChange={updateFrameworks} />
             <PastimesSection data={cardData.pastimes} onChange={updatePastimes} />
