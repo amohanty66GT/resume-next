@@ -29,33 +29,55 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
 
   // Render PDF pages when dialog opens
   useEffect(() => {
-    if (!showResumeDialog || !pdfDocument || !canvasContainerRef.current) return;
+    if (!showResumeDialog || !pdfDocument || !canvasContainerRef.current) {
+      console.log('PDF render check:', { showResumeDialog, hasPdfDocument: !!pdfDocument, hasContainer: !!canvasContainerRef.current });
+      return;
+    }
 
     const renderPages = async () => {
       const container = canvasContainerRef.current;
-      if (!container) return;
+      if (!container) {
+        console.log('No container found');
+        return;
+      }
 
-      // Clear previous canvases
-      container.innerHTML = '';
+      try {
+        console.log('Starting PDF render, pages:', pdfDocument.numPages);
+        
+        // Clear previous canvases
+        container.innerHTML = '';
 
-      for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
-        const page = await pdfDocument.getPage(pageNum);
-        const viewport = page.getViewport({ scale: 1.5 });
+        for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
+          console.log('Rendering page', pageNum);
+          const page = await pdfDocument.getPage(pageNum);
+          const viewport = page.getViewport({ scale: 1.5 });
 
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        if (!context) continue;
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          if (!context) {
+            console.log('Failed to get canvas context for page', pageNum);
+            continue;
+          }
 
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-        canvas.className = 'mb-4 border border-border rounded shadow-sm';
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          canvas.className = 'mb-4 border border-border rounded shadow-sm';
 
-        container.appendChild(canvas);
+          container.appendChild(canvas);
+          console.log('Canvas appended for page', pageNum);
 
-        await page.render({
-          canvasContext: context,
-          viewport: viewport,
-        } as any).promise;
+          await page.render({
+            canvasContext: context,
+            viewport: viewport,
+          } as any).promise;
+          
+          console.log('Page', pageNum, 'rendered successfully');
+        }
+        
+        console.log('All pages rendered');
+      } catch (error) {
+        console.error('Error rendering PDF pages:', error);
+        toast.error('Failed to render PDF preview');
       }
     };
 
