@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Loader2, Copy, X } from "lucide-react";
+import { Upload, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -21,25 +21,46 @@ interface ImportDataSectionProps {
 export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showResumeDialog, setShowResumeDialog] = useState(false);
-  const [resumeText, setResumeText] = useState("");
+  const [pdfDocument, setPdfDocument] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   // Set up PDF.js worker
   pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-  const extractTextFromPDF = async (file: File): Promise<string> => {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = '';
+  // Render PDF pages when dialog opens
+  useEffect(() => {
+    if (!showResumeDialog || !pdfDocument || !canvasContainerRef.current) return;
 
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map((item: any) => item.str).join(' ');
-      fullText += pageText + '\n';
-    }
+    const renderPages = async () => {
+      const container = canvasContainerRef.current;
+      if (!container) return;
 
-    return fullText;
-  };
+      // Clear previous canvases
+      container.innerHTML = '';
+
+      for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
+        const page = await pdfDocument.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.5 });
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) continue;
+
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        canvas.className = 'mb-4 border border-border rounded shadow-sm';
+
+        container.appendChild(canvas);
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport,
+        } as any).promise;
+      }
+    };
+
+    renderPages();
+  }, [showResumeDialog, pdfDocument]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -56,10 +77,11 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
 
     try {
       if (file.type === 'application/pdf') {
-        const extractedText = await extractTextFromPDF(file);
-        setResumeText(extractedText);
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        setPdfDocument(pdf);
         setShowResumeDialog(true);
-        toast.success("Resume loaded! Select and copy text to fill the form.");
+        toast.success("Resume loaded! You can now view and reference it while filling the form.");
       } else {
         toast.error("Only PDF files are supported");
       }
@@ -69,11 +91,6 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleCopyAll = () => {
-    navigator.clipboard.writeText(resumeText);
-    toast.success("Resume text copied to clipboard!");
   };
 
   return (
@@ -118,30 +135,17 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
       </Card>
 
       <Dialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>Your Resume</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyAll}
-                className="gap-2"
-              >
-                <Copy className="h-4 w-4" />
-                Copy All
-              </Button>
-            </DialogTitle>
+            <DialogTitle>Your Resume Preview</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-auto">
-            <div className="p-4 bg-muted rounded-lg">
-              <pre className="whitespace-pre-wrap text-sm font-mono select-text">
-                {resumeText}
-              </pre>
+          <div className="flex-1 overflow-auto bg-muted/30 p-4 rounded-lg">
+            <div ref={canvasContainerRef} className="flex flex-col items-center">
+              {/* PDF pages will be rendered here */}
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Select and copy any text from above to paste into your form fields.
+            Reference your resume above while filling out the form fields below.
           </p>
         </DialogContent>
       </Dialog>
