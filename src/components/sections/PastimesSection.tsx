@@ -42,7 +42,7 @@ export const PastimesSection = ({ data, onChange }: PastimesSectionProps) => {
           </div>
           <div>
             <h2 className="text-xl font-bold">Pastime Interests</h2>
-            <p className="text-sm text-muted-foreground">What you enjoy outside work</p>
+            <p className="text-sm text-muted-foreground">Outside learning resources & interests beyond professional experiences</p>
           </div>
         </div>
         <Button onClick={addPastime} size="sm" className="gap-2">
