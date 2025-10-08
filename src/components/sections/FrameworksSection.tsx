@@ -18,6 +18,7 @@ export const FrameworksSection = ({ data, onChange }: FrameworksSectionProps) =>
         id: Math.random().toString(36).substr(2, 9),
         name: "",
         proficiency: "",
+        projectsBuilt: "",
       },
     ]);
   };
@@ -78,6 +79,15 @@ export const FrameworksSection = ({ data, onChange }: FrameworksSectionProps) =>
                   placeholder="Expert"
                   value={framework.proficiency}
                   onChange={(e) => updateFramework(framework.id, "proficiency", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label>Number of Projects Built</Label>
+                <Input
+                  placeholder="e.g., 10+ projects"
+                  value={framework.projectsBuilt || ""}
+                  onChange={(e) => updateFramework(framework.id, "projectsBuilt", e.target.value)}
                 />
               </div>
             </div>

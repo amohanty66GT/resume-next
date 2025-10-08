@@ -150,9 +150,14 @@ export const CareerCardPreview = ({ data }: CareerCardPreviewProps) => {
             </CollapsibleTrigger>
             <CollapsibleContent className="px-6 py-4 space-y-4 border-b">
               {data.frameworks.map((framework) => (
-                <div key={framework.id} className="flex justify-between items-center">
-                  <span className="font-medium text-foreground">{framework.name}</span>
-                  <span className="text-sm text-muted-foreground">{framework.proficiency}</span>
+                <div key={framework.id} className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-foreground">{framework.name}</span>
+                    <span className="text-sm text-muted-foreground">{framework.proficiency}</span>
+                  </div>
+                  {framework.projectsBuilt && (
+                    <p className="text-xs text-muted-foreground">Built: {framework.projectsBuilt}</p>
+                  )}
                 </div>
               ))}
             </CollapsibleContent>

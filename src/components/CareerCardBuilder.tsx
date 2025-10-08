@@ -52,6 +52,7 @@ export interface CareerCardData {
     id: string;
     name: string;
     proficiency: string;
+    projectsBuilt?: string;
   }>;
   pastimes: Array<{
     id: string;
