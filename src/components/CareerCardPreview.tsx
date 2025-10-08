@@ -130,8 +130,8 @@ export const CareerCardPreview = ({ data }: CareerCardPreviewProps) => {
             <CollapsibleContent className="px-6 py-4 space-y-4 border-b">
               {data.stylesOfWork.map((style) => (
                 <div key={style.id} className="space-y-1">
-                  <h4 className="font-semibold text-foreground">{style.style}</h4>
-                  <p className="text-sm text-foreground/80">{style.description}</p>
+                  <h4 className="font-semibold text-foreground">{style.question}</h4>
+                  <p className="text-sm text-primary">Answer: {style.selectedAnswer}</p>
                 </div>
               ))}
             </CollapsibleContent>

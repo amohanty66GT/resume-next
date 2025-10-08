@@ -44,8 +44,8 @@ export interface CareerCardData {
   }>;
   stylesOfWork: Array<{
     id: string;
-    style: string;
-    description: string;
+    question: string;
+    selectedAnswer: string;
   }>;
   frameworks: Array<{
     id: string;
