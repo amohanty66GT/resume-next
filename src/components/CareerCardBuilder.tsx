@@ -180,6 +180,11 @@ const CareerCardBuilder = () => {
       newCardData.experience = [...newCardData.experience, ...importedData.experience];
     }
 
+    // Update projects if available
+    if (importedData.projects && Array.isArray(importedData.projects)) {
+      newCardData.projects = [...newCardData.projects, ...importedData.projects];
+    }
+
     // Update greatestImpacts if available
     if (importedData.greatestImpacts && Array.isArray(importedData.greatestImpacts)) {
       newCardData.greatestImpacts = [...newCardData.greatestImpacts, ...importedData.greatestImpacts];

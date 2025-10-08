@@ -12,6 +12,12 @@ interface ExperienceEntry {
   description: string;
 }
 
+interface ProjectEntry {
+  name: string;
+  description: string;
+  technologies: string;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -49,15 +55,15 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: 'user',
-            content: `Extract work experience entries from this resume text:\n\n${resumeText}`
+            content: `Extract work experience entries AND project entries from this resume text. Look for both professional work experience and projects/side projects:\n\n${resumeText}`
           }
         ],
         tools: [
           {
             type: 'function',
             function: {
-              name: 'extract_experience',
-              description: 'Extract structured work experience entries from resume text',
+              name: 'extract_data',
+              description: 'Extract structured work experience and project entries from resume text',
               parameters: {
                 type: 'object',
                 properties: {
@@ -86,15 +92,37 @@ Deno.serve(async (req) => {
                       required: ['title', 'company', 'period', 'description'],
                       additionalProperties: false
                     }
+                  },
+                  projects: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        name: {
+                          type: 'string',
+                          description: 'Project name'
+                        },
+                        description: {
+                          type: 'string',
+                          description: 'Project description and what was built'
+                        },
+                        technologies: {
+                          type: 'string',
+                          description: 'Technologies used, comma-separated (e.g., "React, Node.js, MongoDB")'
+                        }
+                      },
+                      required: ['name', 'description', 'technologies'],
+                      additionalProperties: false
+                    }
                   }
                 },
-                required: ['experiences'],
+                required: ['experiences', 'projects'],
                 additionalProperties: false
               }
             }
           }
         ],
-        tool_choice: { type: 'function', function: { name: 'extract_experience' } }
+        tool_choice: { type: 'function', function: { name: 'extract_data' } }
       }),
     });
 
@@ -107,27 +135,30 @@ Deno.serve(async (req) => {
     const aiData = await aiResponse.json();
     console.log('AI response received:', JSON.stringify(aiData, null, 2));
 
-    // Extract experiences from tool call
+    // Extract experiences and projects from tool call
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     let experiences: ExperienceEntry[] = [];
+    let projects: ProjectEntry[] = [];
 
     if (toolCall?.function?.arguments) {
       try {
         const parsed = JSON.parse(toolCall.function.arguments);
         experiences = parsed.experiences || [];
+        projects = parsed.projects || [];
         console.log('Parsed experiences:', experiences);
+        console.log('Parsed projects:', projects);
       } catch (parseError) {
         console.error('Failed to parse tool call arguments:', parseError);
         console.error('Arguments were:', toolCall.function.arguments);
       }
     }
 
-    if (experiences.length === 0) {
-      console.log('No experiences extracted, returning empty array');
+    if (experiences.length === 0 && projects.length === 0) {
+      console.log('No experiences or projects extracted, returning empty arrays');
     }
 
     return new Response(
-      JSON.stringify({ experiences }),
+      JSON.stringify({ experiences, projects }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
 

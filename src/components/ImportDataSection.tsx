@@ -137,18 +137,32 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
       console.log('Parsed data:', data);
 
       const experiences = data?.experiences || [];
+      const projects = data?.projects || [];
 
-      if (experiences.length === 0) {
-        toast.error("No experience entries found in resume");
+      if (experiences.length === 0 && projects.length === 0) {
+        toast.error("No experience or project entries found in resume");
         return;
       }
 
-      // Send the structured experience data to the parent component
-      onDataImported({
-        experience: experiences
-      });
+      // Send the structured data to the parent component
+      const importData: any = {};
+      if (experiences.length > 0) {
+        importData.experience = experiences;
+      }
+      if (projects.length > 0) {
+        importData.projects = projects;
+      }
 
-      toast.success(`Added ${experiences.length} experience ${experiences.length === 1 ? 'entry' : 'entries'} to your card`);
+      onDataImported(importData);
+
+      const parts = [];
+      if (experiences.length > 0) {
+        parts.push(`${experiences.length} experience ${experiences.length === 1 ? 'entry' : 'entries'}`);
+      }
+      if (projects.length > 0) {
+        parts.push(`${projects.length} project${projects.length === 1 ? '' : 's'}`);
+      }
+      toast.success(`Added ${parts.join(' and ')} to your card`);
       setShowResumeDialog(false);
     } catch (error: any) {
       console.error('Error processing resume:', error);
