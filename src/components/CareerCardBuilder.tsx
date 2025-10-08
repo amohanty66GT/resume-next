@@ -35,6 +35,7 @@ export interface CareerCardData {
     name: string;
     description: string;
     technologies: string;
+    projectUrl?: string;
   }>;
   greatestImpacts: Array<{
     id: string;

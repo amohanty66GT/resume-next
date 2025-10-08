@@ -3,8 +3,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { FolderGit2, Plus, Trash2 } from "lucide-react";
+import { FolderGit2, Plus, Trash2, Upload, Link as LinkIcon } from "lucide-react";
 import { CareerCardData } from "../CareerCardBuilder";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useState } from "react";
 
 interface ProjectsSectionProps {
   data: CareerCardData["projects"];
@@ -12,6 +15,8 @@ interface ProjectsSectionProps {
 }
 
 export const ProjectsSection = ({ data, onChange }: ProjectsSectionProps) => {
+  const [uploadingFile, setUploadingFile] = useState<string | null>(null);
+
   const addProject = () => {
     onChange([
       ...data,
@@ -20,6 +25,7 @@ export const ProjectsSection = ({ data, onChange }: ProjectsSectionProps) => {
         name: "",
         description: "",
         technologies: "",
+        projectUrl: "",
       },
     ]);
   };
@@ -32,6 +38,33 @@ export const ProjectsSection = ({ data, onChange }: ProjectsSectionProps) => {
     onChange(
       data.map((project) => (project.id === id ? { ...project, [field]: value } : project))
     );
+  };
+
+  const handleFileUpload = async (id: string, file: File) => {
+    try {
+      setUploadingFile(id);
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${id}_${Date.now()}.${fileExt}`;
+      const filePath = `project-files/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("profile-images")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("profile-images")
+        .getPublicUrl(filePath);
+
+      updateProject(id, "projectUrl", urlData.publicUrl);
+      toast.success("File uploaded successfully!");
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload file");
+    } finally {
+      setUploadingFile(null);
+    }
   };
 
   return (
@@ -90,6 +123,49 @@ export const ProjectsSection = ({ data, onChange }: ProjectsSectionProps) => {
                 value={project.technologies}
                 onChange={(e) => updateProject(project.id, "technologies", e.target.value)}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Project File or Link</Label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    placeholder="https://github.com/username/project or paste link"
+                    value={project.projectUrl || ""}
+                    onChange={(e) => updateProject(project.id, "projectUrl", e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      const input = document.createElement("input");
+                      input.type = "file";
+                      input.accept = ".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg";
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) handleFileUpload(project.id, file);
+                      };
+                      input.click();
+                    }}
+                    disabled={uploadingFile === project.id}
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                  {project.projectUrl && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => window.open(project.projectUrl, "_blank")}
+                    >
+                      <LinkIcon className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         ))}
