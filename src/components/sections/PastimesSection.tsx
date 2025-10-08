@@ -41,8 +41,8 @@ export const PastimesSection = ({ data, onChange }: PastimesSectionProps) => {
             <Heart className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">Pastime Interests</h2>
-            <p className="text-sm text-muted-foreground">Outside learning resources & interests beyond professional experiences</p>
+            <h2 className="text-xl font-bold">Self-Learning & Skill Development</h2>
+            <p className="text-sm text-muted-foreground">Technical skills & knowledge gained outside formal work or projects</p>
           </div>
         </div>
         <Button onClick={addPastime} size="sm" className="gap-2">
@@ -64,18 +64,18 @@ export const PastimesSection = ({ data, onChange }: PastimesSectionProps) => {
             </Button>
 
             <div className="space-y-2">
-              <Label>Activity</Label>
+              <Label>Learning Activity / Resource</Label>
               <Input
-                placeholder="Photography"
+                placeholder="e.g., Online courses, tutorials, books, open-source contributions"
                 value={pastime.activity}
                 onChange={(e) => updatePastime(pastime.id, "activity", e.target.value)}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>Technical Skills Developed</Label>
               <Textarea
-                placeholder="Describe your interest and involvement..."
+                placeholder="Describe what technical skills you learned and how..."
                 value={pastime.description}
                 onChange={(e) => updatePastime(pastime.id, "description", e.target.value)}
                 rows={3}
@@ -86,7 +86,7 @@ export const PastimesSection = ({ data, onChange }: PastimesSectionProps) => {
 
         {data.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
-            No pastimes added yet. Click "Add" to get started.
+            No self-learning activities added yet. Click "Add" to get started.
           </div>
         )}
       </div>
