@@ -83,7 +83,7 @@ export const FrameworksSection = ({ data, onChange }: FrameworksSectionProps) =>
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label>Number of Projects Built</Label>
+                <Label>Number of projects built with framework</Label>
                 <Input
                   placeholder="e.g., 10+ projects"
                   value={framework.projectsBuilt || ""}
