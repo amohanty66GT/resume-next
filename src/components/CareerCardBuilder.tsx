@@ -71,7 +71,11 @@ export interface CareerCardData {
   }>;
 }
 
-const CareerCardBuilder = () => {
+interface CareerCardBuilderProps {
+  userId: string;
+}
+
+const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
   const [showPreview, setShowPreview] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
@@ -106,14 +110,15 @@ const CareerCardBuilder = () => {
         const { error } = await supabase
           .from("career_cards")
           .update({ card_data: cardData as any })
-          .eq("id", sharedCardId);
+          .eq("id", sharedCardId)
+          .eq("user_id", userId);
 
         if (error) throw error;
       } else {
         // Create new card
         const { data, error } = await supabase
           .from("career_cards")
-          .insert({ card_data: cardData as any })
+          .insert({ card_data: cardData as any, user_id: userId })
           .select("id")
           .single();
 
