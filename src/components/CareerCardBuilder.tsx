@@ -25,6 +25,7 @@ export interface CareerCardData {
     imageUrl: string;
     portfolioUrl?: string;
   };
+  theme?: 'blue' | 'purple' | 'green' | 'orange' | 'pink' | 'slate';
   experience: Array<{
     id: string;
     title: string;
@@ -91,6 +92,7 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
       imageUrl: "",
       portfolioUrl: "",
     },
+    theme: 'blue',
     experience: [],
     projects: [],
     greatestImpacts: [],
@@ -335,7 +337,12 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
             </Card>
             
             <ImportDataSection onDataImported={handleImportedData} />
-            <ProfileSection data={cardData.profile} onChange={updateProfile} />
+            <ProfileSection 
+              data={cardData.profile} 
+              onChange={updateProfile}
+              theme={cardData.theme}
+              onThemeChange={(theme) => setCardData({ ...cardData, theme })}
+            />
             <ExperienceSection data={cardData.experience} onChange={updateExperience} />
             <ProjectsSection data={cardData.projects} onChange={updateProjects} />
             <GreatestImpactsSection data={cardData.greatestImpacts} onChange={updateGreatestImpacts} />

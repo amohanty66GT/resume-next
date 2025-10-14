@@ -78,6 +78,7 @@ const codeShowcaseSchema = z.object({
 // Complete career card data validation
 export const careerCardDataSchema = z.object({
   profile: profileSchema,
+  theme: z.enum(['blue', 'purple', 'green', 'orange', 'pink', 'slate']).optional(),
   experience: z.array(experienceSchema).max(20, 'Maximum 20 experience entries allowed'),
   projects: z.array(projectSchema).max(20, 'Maximum 20 projects allowed'),
   greatestImpacts: z.array(greatestImpactSchema).max(10, 'Maximum 10 impacts allowed'),

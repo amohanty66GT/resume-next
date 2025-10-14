@@ -11,9 +11,11 @@ import { useState, useRef } from "react";
 interface ProfileSectionProps {
   data: CareerCardData["profile"];
   onChange: (profile: CareerCardData["profile"]) => void;
+  theme?: 'blue' | 'purple' | 'green' | 'orange' | 'pink' | 'slate';
+  onThemeChange: (theme: 'blue' | 'purple' | 'green' | 'orange' | 'pink' | 'slate') => void;
 }
 
-export const ProfileSection = ({ data, onChange }: ProfileSectionProps) => {
+export const ProfileSection = ({ data, onChange, theme = 'blue', onThemeChange }: ProfileSectionProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -156,6 +158,48 @@ export const ProfileSection = ({ data, onChange }: ProfileSectionProps) => {
               />
             </div>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="portfolioUrl">Portfolio URL (Optional)</Label>
+          <Input
+            id="portfolioUrl"
+            type="url"
+            placeholder="https://yourwebsite.com"
+            value={data.portfolioUrl || ""}
+            onChange={(e) => onChange({ ...data, portfolioUrl: e.target.value })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Card Theme</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { name: 'blue', color: 'hsl(221 83% 53%)' },
+              { name: 'purple', color: 'hsl(271 91% 65%)' },
+              { name: 'green', color: 'hsl(142 76% 36%)' },
+              { name: 'orange', color: 'hsl(24 95% 53%)' },
+              { name: 'pink', color: 'hsl(330 81% 60%)' },
+              { name: 'slate', color: 'hsl(215 16% 47%)' },
+            ].map((themeOption) => (
+              <button
+                key={themeOption.name}
+                type="button"
+                onClick={() => onThemeChange(themeOption.name as any)}
+                className={`p-3 rounded-lg border-2 transition-all ${
+                  theme === themeOption.name
+                    ? 'border-primary ring-2 ring-primary/20'
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div 
+                  className="w-full h-8 rounded"
+                  style={{ backgroundColor: themeOption.color }}
+                />
+                <p className="text-xs mt-2 capitalize text-center">{themeOption.name}</p>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </Card>
