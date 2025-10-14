@@ -1,17 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { authenticateRequest, corsHeaders, AuthError, validateTextLength, ValidationError } from "../_shared/auth.ts";
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Authenticate the request
+    const userId = await authenticateRequest(req);
+    console.log('Processing resume parse for user:', userId);
+
     const { resumeText, linkedinUrl, githubUrl } = await req.json();
+
+    // Validate input
+    validateTextLength(resumeText, 50000, 'Resume text'); // 50KB limit
 
     console.log('Processing resume parse request with text length:', resumeText?.length);
 
@@ -97,9 +101,31 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in parse-resume function:', error);
+
+    // Handle different error types with appropriate status codes
+    if (error instanceof AuthError) {
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        {
+          status: error.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (error instanceof ValidationError) {
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error occurred' 
+        error: 'An error occurred while processing your request' 
       }),
       {
         status: 500,

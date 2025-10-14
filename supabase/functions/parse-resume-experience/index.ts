@@ -1,9 +1,6 @@
 /// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { authenticateRequest, corsHeaders, AuthError, validateTextLength, ValidationError } from "../_shared/auth.ts";
 
 interface ExperienceEntry {
   title: string;
@@ -25,15 +22,14 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Authenticate the request
+    const userId = await authenticateRequest(req);
+    console.log('Processing resume parsing for user:', userId);
+
     const { resumeText } = await req.json();
 
-    if (!resumeText) {
-      console.error('No resume text provided');
-      return new Response(
-        JSON.stringify({ error: 'Resume text is required' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
+    // Validate input
+    validateTextLength(resumeText, 100000, 'Resume text'); // 100KB limit
 
     console.log('Parsing resume text with AI...');
 
@@ -133,7 +129,7 @@ Deno.serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    console.log('AI response received:', JSON.stringify(aiData, null, 2));
+    console.log('AI response received');
 
     // Extract experiences and projects from tool call
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
@@ -145,11 +141,9 @@ Deno.serve(async (req) => {
         const parsed = JSON.parse(toolCall.function.arguments);
         experiences = parsed.experiences || [];
         projects = parsed.projects || [];
-        console.log('Parsed experiences:', experiences);
-        console.log('Parsed projects:', projects);
+        console.log(`Parsed ${experiences.length} experiences and ${projects.length} projects`);
       } catch (parseError) {
         console.error('Failed to parse tool call arguments:', parseError);
-        console.error('Arguments were:', toolCall.function.arguments);
       }
     }
 
@@ -164,9 +158,31 @@ Deno.serve(async (req) => {
 
   } catch (error: unknown) {
     console.error('Error in parse-resume-experience:', error);
+
+    // Handle different error types with appropriate status codes
+    if (error instanceof AuthError) {
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        {
+          status: error.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (error instanceof ValidationError) {
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'An error occurred while processing your request' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
