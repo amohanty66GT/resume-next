@@ -117,12 +117,14 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
       }
 
       // Save or update the card data
-      if (sharedCardId) {
+      let cardId = sharedCardId;
+      
+      if (cardId) {
         // Update existing card
         const { error } = await supabase
           .from("career_cards")
           .update({ card_data: validationResult.data as any })
-          .eq("id", sharedCardId)
+          .eq("id", cardId)
           .eq("user_id", userId);
 
         if (error) throw error;
@@ -135,11 +137,14 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
           .single();
 
         if (error) throw error;
-        if (data) setSharedCardId(data.id);
+        if (data) {
+          cardId = data.id;
+          setSharedCardId(data.id);
+        }
       }
 
       // Copy link to clipboard
-      const shareUrl = `${window.location.origin}/card/${sharedCardId || ""}`;
+      const shareUrl = `${window.location.origin}/card/${cardId}`;
       await navigator.clipboard.writeText(shareUrl);
       
       setLinkCopied(true);
