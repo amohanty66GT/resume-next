@@ -239,8 +239,7 @@ const CareerCardBuilder = () => {
           <div className="max-w-4xl mx-auto space-y-6">
             {/* Directions Section */}
             <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                <span className="text-2xl">📋</span>
+              <h2 className="text-xl font-semibold mb-3">
                 How to Build Your Career Card
               </h2>
               <div className="space-y-2 text-muted-foreground">
