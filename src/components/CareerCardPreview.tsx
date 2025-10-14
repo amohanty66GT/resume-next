@@ -12,12 +12,12 @@ interface CareerCardPreviewProps {
 }
 
 const themeColors = {
-  blue: { primary: 'hsl(217 91% 35%)', gradient: 'from-blue-900/10 to-blue-950/5', ring: 'ring-blue-900/10', icon: 'text-blue-900' },
-  purple: { primary: 'hsl(262 52% 47%)', gradient: 'from-purple-800/10 to-purple-900/5', ring: 'ring-purple-800/10', icon: 'text-purple-800' },
-  green: { primary: 'hsl(158 64% 32%)', gradient: 'from-teal-700/10 to-teal-800/5', ring: 'ring-teal-700/10', icon: 'text-teal-700' },
-  orange: { primary: 'hsl(25 75% 47%)', gradient: 'from-orange-700/10 to-orange-800/5', ring: 'ring-orange-700/10', icon: 'text-orange-700' },
-  pink: { primary: 'hsl(339 68% 45%)', gradient: 'from-rose-700/10 to-rose-800/5', ring: 'ring-rose-700/10', icon: 'text-rose-700' },
-  slate: { primary: 'hsl(215 25% 27%)', gradient: 'from-slate-700/10 to-slate-800/5', ring: 'ring-slate-700/10', icon: 'text-slate-700' },
+  blue: { primary: 'hsl(217 91% 42%)', gradient: 'from-blue-700/15 to-blue-800/8', ring: 'ring-blue-700/15', icon: 'text-blue-700' },
+  purple: { primary: 'hsl(262 52% 55%)', gradient: 'from-purple-600/15 to-purple-700/8', ring: 'ring-purple-600/15', icon: 'text-purple-600' },
+  green: { primary: 'hsl(158 64% 38%)', gradient: 'from-teal-600/15 to-teal-700/8', ring: 'ring-teal-600/15', icon: 'text-teal-600' },
+  orange: { primary: 'hsl(25 85% 52%)', gradient: 'from-orange-600/15 to-orange-700/8', ring: 'ring-orange-600/15', icon: 'text-orange-600' },
+  pink: { primary: 'hsl(339 75% 52%)', gradient: 'from-rose-600/15 to-rose-700/8', ring: 'ring-rose-600/15', icon: 'text-rose-600' },
+  slate: { primary: 'hsl(215 25% 35%)', gradient: 'from-slate-600/15 to-slate-700/8', ring: 'ring-slate-600/15', icon: 'text-slate-600' },
 };
 
 export const CareerCardPreview = ({ data }: CareerCardPreviewProps) => {
