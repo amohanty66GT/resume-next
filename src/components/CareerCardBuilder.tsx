@@ -237,6 +237,32 @@ const CareerCardBuilder = () => {
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-6">
+            {/* Directions Section */}
+            <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                <span className="text-2xl">📋</span>
+                How to Build Your Career Card
+              </h2>
+              <div className="space-y-2 text-muted-foreground">
+                <p className="flex items-start gap-2">
+                  <span className="text-primary font-semibold mt-0.5">•</span>
+                  <span><strong>Fill what showcases you best</strong> - You don't need to complete every section. Focus on the areas that highlight your unique strengths and experiences.</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-primary font-semibold mt-0.5">•</span>
+                  <span><strong>No word limits</strong> - Write as much or as little as you need. This is your story to tell.</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-primary font-semibold mt-0.5">•</span>
+                  <span><strong>Import your resume</strong> - Use the Import section below to auto-populate from your existing resume or portfolio.</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-primary font-semibold mt-0.5">•</span>
+                  <span><strong>Preview & Export</strong> - Click Preview to see your card, then Export to download it as an image.</span>
+                </p>
+              </div>
+            </Card>
+            
             <ImportDataSection onDataImported={handleImportedData} />
             <ProfileSection data={cardData.profile} onChange={updateProfile} />
             <ExperienceSection data={cardData.experience} onChange={updateExperience} />
