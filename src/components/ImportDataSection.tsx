@@ -42,59 +42,52 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
 
   // Render PDF pages when dialog opens
   useEffect(() => {
-    if (!showResumeDialog || !pdfDocument || !canvasContainerRef.current) {
-      console.log('PDF render check:', { showResumeDialog, hasPdfDocument: !!pdfDocument, hasContainer: !!canvasContainerRef.current });
+    if (!showResumeDialog || !pdfDocument) {
       return;
     }
 
-    const renderPages = async () => {
-      const container = canvasContainerRef.current;
-      if (!container) {
-        console.log('No container found');
-        return;
-      }
-
-      try {
-        console.log('Starting PDF render, pages:', pdfDocument.numPages);
-        
-        // Clear previous canvases
-        container.innerHTML = '';
-
-        for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
-          console.log('Rendering page', pageNum);
-          const page = await pdfDocument.getPage(pageNum);
-          const viewport = page.getViewport({ scale: 1.5 });
-
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          if (!context) {
-            console.log('Failed to get canvas context for page', pageNum);
-            continue;
-          }
-
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-          canvas.className = 'mb-4 border border-border rounded shadow-sm';
-
-          container.appendChild(canvas);
-          console.log('Canvas appended for page', pageNum);
-
-          await page.render({
-            canvasContext: context,
-            viewport: viewport,
-          } as any).promise;
-          
-          console.log('Page', pageNum, 'rendered successfully');
+    // Use setTimeout to ensure DOM is ready
+    const renderTimer = setTimeout(() => {
+      const renderPages = async () => {
+        const container = canvasContainerRef.current;
+        if (!container) {
+          console.error('Container not found');
+          return;
         }
-        
-        console.log('All pages rendered');
-      } catch (error) {
-        console.error('Error rendering PDF pages:', error);
-        toast.error('Failed to render PDF preview');
-      }
-    };
 
-    renderPages();
+        try {
+          // Clear previous canvases
+          container.innerHTML = '';
+
+          for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
+            const page = await pdfDocument.getPage(pageNum);
+            const viewport = page.getViewport({ scale: 1.5 });
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            if (!context) continue;
+
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            canvas.className = 'mb-4 border border-border rounded shadow-sm w-full';
+
+            container.appendChild(canvas);
+
+            await page.render({
+              canvasContext: context,
+              viewport: viewport,
+            } as any).promise;
+          }
+        } catch (error) {
+          console.error('Error rendering PDF pages:', error);
+          toast.error('Failed to render PDF preview');
+        }
+      };
+
+      renderPages();
+    }, 100);
+
+    return () => clearTimeout(renderTimer);
   }, [showResumeDialog, pdfDocument]);
 
   const extractTextFromPDF = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<string> => {
