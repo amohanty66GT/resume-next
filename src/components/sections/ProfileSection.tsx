@@ -175,12 +175,12 @@ export const ProfileSection = ({ data, onChange, theme = 'blue', onThemeChange }
           <Label>Card Theme</Label>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { name: 'blue', color: 'hsl(221 83% 53%)' },
-              { name: 'purple', color: 'hsl(271 91% 65%)' },
-              { name: 'green', color: 'hsl(142 76% 36%)' },
-              { name: 'orange', color: 'hsl(24 95% 53%)' },
-              { name: 'pink', color: 'hsl(330 81% 60%)' },
-              { name: 'slate', color: 'hsl(215 16% 47%)' },
+              { name: 'blue', color: 'hsl(217 91% 35%)' },
+              { name: 'purple', color: 'hsl(262 52% 47%)' },
+              { name: 'green', color: 'hsl(158 64% 32%)' },
+              { name: 'orange', color: 'hsl(25 75% 47%)' },
+              { name: 'pink', color: 'hsl(339 68% 45%)' },
+              { name: 'slate', color: 'hsl(215 25% 27%)' },
             ].map((themeOption) => (
               <button
                 key={themeOption.name}
