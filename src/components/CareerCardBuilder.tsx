@@ -15,6 +15,7 @@ import { CareerCardPreview } from "./CareerCardPreview";
 import { ImportDataSection } from "./ImportDataSection";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
+import { careerCardDataSchema, logger } from "@/lib/validation";
 
 export interface CareerCardData {
   profile: {
@@ -104,12 +105,23 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
       setIsSharing(true);
       toast.loading("Generating shareable link...");
 
+      // Validate card data before saving
+      const validationResult = careerCardDataSchema.safeParse(cardData);
+      
+      if (!validationResult.success) {
+        const firstError = validationResult.error.errors[0];
+        toast.error(`Validation failed: ${firstError.message} at ${firstError.path.join('.')}`);
+        logger.error('Validation errors:', validationResult.error.errors);
+        setIsSharing(false);
+        return;
+      }
+
       // Save or update the card data
       if (sharedCardId) {
         // Update existing card
         const { error } = await supabase
           .from("career_cards")
-          .update({ card_data: cardData as any })
+          .update({ card_data: validationResult.data as any })
           .eq("id", sharedCardId)
           .eq("user_id", userId);
 
@@ -118,7 +130,7 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
         // Create new card
         const { data, error } = await supabase
           .from("career_cards")
-          .insert({ card_data: cardData as any, user_id: userId })
+          .insert({ card_data: validationResult.data as any, user_id: userId })
           .select("id")
           .single();
 
@@ -135,7 +147,7 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
       
       setTimeout(() => setLinkCopied(false), 3000);
     } catch (error) {
-      console.error("Share error:", error);
+      logger.error("Share error:", error);
       toast.error("Failed to generate shareable link. Please try again.");
     } finally {
       setIsSharing(false);
@@ -178,7 +190,7 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
         }
       }, "image/png");
     } catch (error) {
-      console.error("Export error:", error);
+      logger.error("Export error:", error);
       toast.error("Failed to export career card. Please try again.");
     } finally {
       setIsExporting(false);

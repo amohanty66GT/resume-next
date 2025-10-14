@@ -16,6 +16,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { logger } from "@/lib/validation";
 
 interface ImportDataSectionProps {
   onDataImported: (data: any) => void;
@@ -123,11 +124,11 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
       });
 
       if (error) {
-        console.error('Error parsing resume:', error);
+        logger.error('Error parsing resume:', error);
         throw error;
       }
 
-      console.log('Parsed data:', data);
+      logger.log('Resume parsing completed');
 
       const experiences = data?.experiences || [];
       const projects = data?.projects || [];
@@ -158,7 +159,7 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
       toast.success(`Added ${parts.join(' and ')} to your card`);
       setShowResumeDialog(false);
     } catch (error: any) {
-      console.error('Error processing resume:', error);
+      logger.error('Error processing resume:', error);
       toast.error(error.message || "Failed to parse resume");
     } finally {
       setIsLoading(false);
@@ -194,7 +195,7 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
         toast.error("Only PDF files are supported");
       }
     } catch (error: any) {
-      console.error("Error loading resume:", error);
+      logger.error("Error loading resume:", error);
       toast.error(error.message || "Failed to load resume. Please try again.");
     } finally {
       setIsLoading(false);
@@ -227,11 +228,11 @@ export const ImportDataSection = ({ onDataImported }: ImportDataSectionProps) =>
       });
 
       if (error) {
-        console.error('Error parsing portfolio:', error);
+        logger.error('Error parsing portfolio:', error);
         throw error;
       }
 
-      console.log('Portfolio data:', data);
+      logger.log('Portfolio parsing completed');
 
       if (data?.success && data?.data) {
         setPortfolioData(data.data);

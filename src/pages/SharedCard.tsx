@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CareerCardPreview } from "@/components/CareerCardPreview";
 import { CareerCardData } from "@/components/CareerCardBuilder";
 import { Loader2 } from "lucide-react";
+import { logger } from "@/lib/validation";
 
 const SharedCard = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,7 +35,7 @@ const SharedCard = () => {
           setError("Card not found");
         }
       } catch (err) {
-        console.error("Error fetching card:", err);
+        logger.error("Error fetching shared card:", err);
         setError("Failed to load career card");
       } finally {
         setLoading(false);
