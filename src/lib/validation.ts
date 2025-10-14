@@ -18,7 +18,7 @@ const profileSchema = z.object({
 
 // Experience validation
 const experienceSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   title: shortString,
   company: shortString,
   period: shortString,
@@ -27,7 +27,7 @@ const experienceSchema = z.object({
 
 // Project validation
 const projectSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   name: shortString,
   description: longString,
   technologies: mediumString,
@@ -36,7 +36,7 @@ const projectSchema = z.object({
 
 // Greatest impact validation
 const greatestImpactSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   title: shortString,
   context: longString,
   outcome: longString.optional().or(z.literal('')),
@@ -44,14 +44,14 @@ const greatestImpactSchema = z.object({
 
 // Style of work validation
 const styleOfWorkSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   question: mediumString,
   selectedAnswer: mediumString,
 });
 
 // Framework validation
 const frameworkSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   name: shortString,
   proficiency: z.enum(['Beginner', 'Intermediate', 'Advanced', 'Expert']),
   projectsBuilt: shortString.optional().or(z.literal('')),
@@ -59,14 +59,14 @@ const frameworkSchema = z.object({
 
 // Pastime validation
 const pastimeSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   activity: shortString,
   description: longString,
 });
 
 // Code showcase validation
 const codeShowcaseSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   fileName: shortString,
   language: shortString,
   repo: shortString.optional().or(z.literal('')),
