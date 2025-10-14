@@ -9,7 +9,7 @@ interface StylesOfWorkSectionProps {
   onChange: (stylesOfWork: CareerCardData["stylesOfWork"]) => void;
 }
 
-const SURVEY_QUESTIONS = [
+export const SURVEY_QUESTIONS = [
   {
     id: "1",
     question: "Problem-Solving Approach",

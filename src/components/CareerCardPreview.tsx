@@ -5,6 +5,7 @@ import { CareerCardData } from "./CareerCardBuilder";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { SURVEY_QUESTIONS } from "./sections/StylesOfWorkSection";
 
 interface CareerCardPreviewProps {
   data: CareerCardData;
@@ -128,12 +129,17 @@ export const CareerCardPreview = ({ data }: CareerCardPreviewProps) => {
               <ChevronDown className={`h-5 w-5 transition-transform ${openSections.includes("styles") ? "rotate-180" : ""}`} />
             </CollapsibleTrigger>
             <CollapsibleContent className="px-6 py-4 space-y-4 border-b">
-              {data.stylesOfWork.map((style) => (
-                <div key={style.id} className="space-y-1">
-                  <h4 className="font-semibold text-foreground">{style.question}</h4>
-                  <p className="text-sm text-primary">Answer: {style.selectedAnswer}</p>
-                </div>
-              ))}
+              {data.stylesOfWork.map((style) => {
+                const question = SURVEY_QUESTIONS.find(q => q.id === style.id);
+                const selectedOption = question?.options.find(opt => opt.value === style.selectedAnswer);
+                
+                return (
+                  <div key={style.id} className="space-y-1">
+                    <h4 className="font-semibold text-foreground">{style.question}</h4>
+                    <p className="text-sm text-foreground/80">{selectedOption?.label || style.selectedAnswer}</p>
+                  </div>
+                );
+              })}
             </CollapsibleContent>
           </Collapsible>
         )}
