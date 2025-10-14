@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, Eye, Edit3 } from "lucide-react";
+import { Download, Eye, Edit3, Link, Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { ProfileSection } from "./sections/ProfileSection";
 import { ExperienceSection } from "./sections/ExperienceSection";
 import { ProjectsSection } from "./sections/ProjectsSection";
@@ -73,6 +74,9 @@ export interface CareerCardData {
 const CareerCardBuilder = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [sharedCardId, setSharedCardId] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const [cardData, setCardData] = useState<CareerCardData>({
     profile: {
@@ -90,6 +94,48 @@ const CareerCardBuilder = () => {
     pastimes: [],
     codeShowcase: [],
   });
+
+  const handleShareCard = async () => {
+    try {
+      setIsSharing(true);
+      toast.loading("Generating shareable link...");
+
+      // Save or update the card data
+      if (sharedCardId) {
+        // Update existing card
+        const { error } = await supabase
+          .from("career_cards")
+          .update({ card_data: cardData as any })
+          .eq("id", sharedCardId);
+
+        if (error) throw error;
+      } else {
+        // Create new card
+        const { data, error } = await supabase
+          .from("career_cards")
+          .insert({ card_data: cardData as any })
+          .select("id")
+          .single();
+
+        if (error) throw error;
+        if (data) setSharedCardId(data.id);
+      }
+
+      // Copy link to clipboard
+      const shareUrl = `${window.location.origin}/card/${sharedCardId || ""}`;
+      await navigator.clipboard.writeText(shareUrl);
+      
+      setLinkCopied(true);
+      toast.success("Link copied to clipboard!");
+      
+      setTimeout(() => setLinkCopied(false), 3000);
+    } catch (error) {
+      console.error("Share error:", error);
+      toast.error("Failed to generate shareable link. Please try again.");
+    } finally {
+      setIsSharing(false);
+    }
+  };
 
   const handleExport = async () => {
     if (!previewRef.current) {
@@ -221,9 +267,13 @@ const CareerCardBuilder = () => {
               {showPreview ? <Edit3 className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               {showPreview ? "Edit" : "Preview"}
             </Button>
-            <Button onClick={handleExport} className="gap-2" disabled={isExporting}>
+            <Button onClick={handleShareCard} className="gap-2" disabled={isSharing}>
+              {linkCopied ? <Check className="h-4 w-4" /> : <Link className="h-4 w-4" />}
+              {isSharing ? "Generating..." : linkCopied ? "Link Copied!" : "Share Card"}
+            </Button>
+            <Button onClick={handleExport} variant="outline" className="gap-2" disabled={isExporting}>
               <Download className="h-4 w-4" />
-              {isExporting ? "Exporting..." : "Export Card"}
+              {isExporting ? "Exporting..." : "Export PNG"}
             </Button>
           </div>
         </div>
