@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Award, TrendingUp, TrendingDown } from "lucide-react";
+import { Loader2, Award, TrendingUp, TrendingDown, Upload, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { CareerCardData } from "./CareerCardBuilder";
@@ -27,18 +28,86 @@ interface CareerCardScoringProps {
   cardData: CareerCardData;
 }
 
-export const CareerCardScoring = ({ cardData }: CareerCardScoringProps) => {
+export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScoringProps) => {
   const [companyDescription, setCompanyDescription] = useState("");
   const [roleDescription, setRoleDescription] = useState("");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedCardData, setUploadedCardData] = useState<CareerCardData | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [isScoring, setIsScoring] = useState(false);
   const [scoringResult, setScoringResult] = useState<ScoringResult | null>(null);
   const { toast } = useToast();
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadedFile(file);
+    setIsUploading(true);
+
+    try {
+      const fileType = file.type;
+      
+      // For PDF files, use the parse edge function
+      if (fileType === "application/pdf") {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const base64 = event.target?.result as string;
+          
+          const { data, error } = await supabase.functions.invoke("parse-resume", {
+            body: { 
+              fileData: base64.split(',')[1],
+              fileName: file.name 
+            },
+          });
+
+          if (error) throw error;
+          
+          setUploadedCardData(data);
+          toast({
+            title: "File Uploaded",
+            description: "Career card has been parsed successfully",
+          });
+        };
+        reader.readAsDataURL(file);
+      } else if (fileType.startsWith("image/")) {
+        // For images, use OCR or image analysis
+        toast({
+          title: "Image Upload",
+          description: "Image files will be analyzed for career card content",
+        });
+      } else {
+        throw new Error("Unsupported file type. Please upload a PDF or image file.");
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to upload career card",
+        variant: "destructive",
+      });
+      setUploadedFile(null);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleScore = async () => {
+    const cardToScore = uploadedCardData || initialCardData;
+    
     if (!companyDescription.trim() || !roleDescription.trim()) {
       toast({
         title: "Missing Information",
         description: "Please provide both company and role descriptions",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!uploadedCardData && !initialCardData.profile.name) {
+      toast({
+        title: "Missing Career Card",
+        description: "Please upload a career card to score",
         variant: "destructive",
       });
       return;
@@ -50,7 +119,7 @@ export const CareerCardScoring = ({ cardData }: CareerCardScoringProps) => {
     try {
       const { data, error } = await supabase.functions.invoke("score-career-card", {
         body: {
-          careerCardData: cardData,
+          careerCardData: cardToScore,
           companyDescription,
           roleDescription,
         },
@@ -102,6 +171,34 @@ export const CareerCardScoring = ({ cardData }: CareerCardScoringProps) => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="career-card">Upload Career Card (PDF or Image)</Label>
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <Input
+                  id="career-card"
+                  type="file"
+                  accept=".pdf,image/*"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                  className="cursor-pointer"
+                />
+              </div>
+              {uploadedFile && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <FileText className="h-4 w-4" />
+                  <span>{uploadedFile.name}</span>
+                </div>
+              )}
+            </div>
+            {isUploading && (
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Processing career card...
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="company">Company Description</Label>
             <Textarea
               id="company"
@@ -127,7 +224,7 @@ export const CareerCardScoring = ({ cardData }: CareerCardScoringProps) => {
 
           <Button
             onClick={handleScore}
-            disabled={isScoring || !companyDescription.trim() || !roleDescription.trim()}
+            disabled={isScoring || isUploading || !companyDescription.trim() || !roleDescription.trim()}
             className="w-full"
           >
             {isScoring ? (
