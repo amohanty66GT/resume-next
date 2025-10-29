@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, Eye, Edit3, Link, Check } from "lucide-react";
+import { Download, Eye, Edit3, Link, Check, Award } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileSection } from "./sections/ProfileSection";
 import { ExperienceSection } from "./sections/ExperienceSection";
@@ -84,6 +84,7 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
   const [isSharing, setIsSharing] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [sharedCardId, setSharedCardId] = useState<string | null>(null);
+  const scoringRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const [cardData, setCardData] = useState<CareerCardData>({
     profile: {
@@ -205,6 +206,13 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
     }
   };
 
+  const handleScoreCard = () => {
+    setShowPreview(false);
+    setTimeout(() => {
+      scoringRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
   const updateProfile = (profile: CareerCardData["profile"]) => {
     setCardData({ ...cardData, profile });
   };
@@ -292,6 +300,10 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
               {showPreview ? <Edit3 className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               {showPreview ? "Edit" : "Preview"}
             </Button>
+            <Button onClick={handleScoreCard} variant="outline" className="gap-2">
+              <Award className="h-4 w-4" />
+              Score Card
+            </Button>
             <Button onClick={handleShareCard} className="gap-2" disabled={isSharing}>
               {linkCopied ? <Check className="h-4 w-4" /> : <Link className="h-4 w-4" />}
               {isSharing ? "Generating..." : linkCopied ? "Link Copied!" : "Share Card"}
@@ -338,7 +350,9 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
             </Card>
             
             <ImportDataSection onDataImported={handleImportedData} />
-            <CareerCardScoring cardData={cardData} />
+            <div ref={scoringRef}>
+              <CareerCardScoring cardData={cardData} />
+            </div>
             <ProfileSection 
               data={cardData.profile} 
               onChange={updateProfile}
