@@ -1,5 +1,56 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { authenticateRequest, corsHeaders, AuthError, validateUrl, ValidationError } from "../_shared/auth.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+class AuthError extends Error {
+  constructor(message: string, public status: number) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}
+
+class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+async function authenticateRequest(req: Request): Promise<string> {
+  const authHeader = req.headers.get('Authorization');
+  
+  if (!authHeader) {
+    throw new AuthError('Missing authorization header', 401);
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Missing Supabase configuration');
+    throw new AuthError('Server configuration error', 500);
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: { Authorization: authHeader },
+    },
+  });
+
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    console.error('Authentication failed:', error?.message);
+    throw new AuthError('Invalid or expired token', 401);
+  }
+
+  console.log('Authenticated user:', user.id);
+  return user.id;
+}
 
 // Allowed domains for portfolio URLs (to prevent SSRF attacks)
 const ALLOWED_DOMAINS = [
