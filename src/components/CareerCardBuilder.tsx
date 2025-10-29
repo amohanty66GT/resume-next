@@ -13,6 +13,7 @@ import { PastimesSection } from "./sections/PastimesSection";
 import { CodeShowcaseSection } from "./sections/CodeShowcaseSection";
 import { CareerCardPreview } from "./CareerCardPreview";
 import { ImportDataSection } from "./ImportDataSection";
+import { CareerCardScoring } from "./CareerCardScoring";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { careerCardDataSchema, logger } from "@/lib/validation";
@@ -337,6 +338,7 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
             </Card>
             
             <ImportDataSection onDataImported={handleImportedData} />
+            <CareerCardScoring cardData={cardData} />
             <ProfileSection 
               data={cardData.profile} 
               onChange={updateProfile}
