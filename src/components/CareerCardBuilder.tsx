@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Download, Eye, Edit3, Link, Check, Award } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileSection } from "./sections/ProfileSection";
 import { ExperienceSection } from "./sections/ExperienceSection";
@@ -84,8 +85,8 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
   const [isSharing, setIsSharing] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [sharedCardId, setSharedCardId] = useState<string | null>(null);
-  const scoringRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const [cardData, setCardData] = useState<CareerCardData>({
     profile: {
       name: "",
@@ -207,10 +208,7 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
   };
 
   const handleScoreCard = () => {
-    setShowPreview(false);
-    setTimeout(() => {
-      scoringRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+    navigate("/score");
   };
 
   const updateProfile = (profile: CareerCardData["profile"]) => {
@@ -350,10 +348,8 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
             </Card>
             
             <ImportDataSection onDataImported={handleImportedData} />
-            <div ref={scoringRef}>
-              <CareerCardScoring cardData={cardData} />
-            </div>
-            <ProfileSection 
+            
+            <ProfileSection
               data={cardData.profile} 
               onChange={updateProfile}
               theme={cardData.theme}
