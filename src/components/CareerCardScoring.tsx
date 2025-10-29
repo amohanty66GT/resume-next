@@ -48,36 +48,71 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
     try {
       const fileType = file.type;
       
-      // For PDF files, use the parse edge function
+      // For PDF files, extract text first
       if (fileType === "application/pdf") {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          const base64 = event.target?.result as string;
-          
-          const { data, error } = await supabase.functions.invoke("parse-resume", {
-            body: { 
-              fileData: base64.split(',')[1],
-              fileName: file.name 
-            },
-          });
+        console.log("Processing PDF file:", file.name);
+        
+        // Use pdfjs-dist to extract text from PDF
+        const { getDocument } = await import('pdfjs-dist');
+        const pdfjsLib = await import('pdfjs-dist/build/pdf.worker.mjs');
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await getDocument({ data: arrayBuffer }).promise;
+        
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map((item: any) => item.str).join(' ');
+          fullText += pageText + '\n';
+        }
+        
+        console.log("Extracted text length:", fullText.length);
+        
+        const { data, error } = await supabase.functions.invoke("parse-resume", {
+          body: { resumeText: fullText },
+        });
 
-          if (error) throw error;
-          
-          setUploadedCardData(data);
-          toast({
-            title: "File Uploaded",
-            description: "Career card has been parsed successfully",
-          });
+        if (error) {
+          console.error("Parse resume error:", error);
+          throw error;
+        }
+        
+        console.log("Parsed resume data:", data);
+        
+        // Convert parsed data to full CareerCardData format
+        const cardData: CareerCardData = {
+          profile: {
+            name: data.profile?.name || "",
+            title: data.profile?.title || "",
+            location: data.profile?.location || "",
+            imageUrl: "",
+            portfolioUrl: "",
+          },
+          experience: data.experience || [],
+          frameworks: [],
+          projects: [],
+          codeShowcase: [],
+          pastimes: [],
+          stylesOfWork: [],
+          greatestImpacts: [],
+          theme: "blue",
         };
-        reader.readAsDataURL(file);
+        
+        setUploadedCardData(cardData);
+        toast({
+          title: "File Uploaded",
+          description: `Career card parsed successfully with ${data.experience?.length || 0} experiences`,
+        });
       } else if (fileType.startsWith("image/")) {
-        // For images, use OCR or image analysis
         toast({
           title: "Image Upload",
-          description: "Image files will be analyzed for career card content",
+          description: "Image parsing is not yet supported. Please upload a PDF file.",
+          variant: "destructive",
         });
+        setUploadedFile(null);
       } else {
-        throw new Error("Unsupported file type. Please upload a PDF or image file.");
+        throw new Error("Unsupported file type. Please upload a PDF file.");
       }
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -87,6 +122,7 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
         variant: "destructive",
       });
       setUploadedFile(null);
+      setUploadedCardData(null);
     } finally {
       setIsUploading(false);
     }
