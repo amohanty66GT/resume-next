@@ -10,6 +10,10 @@ import { Loader2, Award, TrendingUp, TrendingDown, Upload, FileText } from "luci
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { CareerCardData } from "./CareerCardBuilder";
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 interface ScoringResult {
   overallScore: number;
@@ -52,12 +56,11 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
       if (fileType === "application/pdf") {
         console.log("Processing PDF file:", file.name);
         
-        // Use pdfjs-dist to extract text from PDF
-        const { getDocument } = await import('pdfjs-dist');
-        const pdfjsLib = await import('pdfjs-dist/build/pdf.worker.mjs');
-        
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await getDocument({ data: arrayBuffer }).promise;
+        console.log("PDF loaded, size:", arrayBuffer.byteLength);
+        
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        console.log("PDF parsed, pages:", pdf.numPages);
         
         let fullText = '';
         for (let i = 1; i <= pdf.numPages; i++) {
@@ -68,14 +71,19 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
         }
         
         console.log("Extracted text length:", fullText.length);
+        console.log("First 200 chars:", fullText.substring(0, 200));
+        
+        if (!fullText.trim()) {
+          throw new Error("No text could be extracted from the PDF. Please ensure the PDF contains readable text.");
+        }
         
         const { data, error } = await supabase.functions.invoke("parse-resume", {
-          body: { resumeText: fullText },
+          body: { resumeText: fullText.trim() },
         });
 
         if (error) {
           console.error("Parse resume error:", error);
-          throw error;
+          throw new Error(error.message || "Failed to parse resume");
         }
         
         console.log("Parsed resume data:", data);
