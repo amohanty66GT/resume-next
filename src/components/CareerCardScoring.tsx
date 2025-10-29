@@ -93,8 +93,6 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
   };
 
   const handleScore = async () => {
-    const cardToScore = uploadedCardData || initialCardData;
-    
     if (!companyDescription.trim() || !roleDescription.trim()) {
       toast({
         title: "Missing Information",
@@ -104,7 +102,7 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
       return;
     }
 
-    if (!uploadedCardData && !initialCardData.profile.name) {
+    if (!uploadedCardData) {
       toast({
         title: "Missing Career Card",
         description: "Please upload a career card to score",
@@ -112,6 +110,8 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
       });
       return;
     }
+
+    const cardToScore = uploadedCardData;
 
     setIsScoring(true);
     setScoringResult(null);
