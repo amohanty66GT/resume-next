@@ -17,6 +17,7 @@ import { ImportDataSection } from "./ImportDataSection";
 import { CareerCardScoring } from "./CareerCardScoring";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { careerCardDataSchema, logger } from "@/lib/validation";
 
 export interface CareerCardData {
@@ -176,7 +177,7 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
 
     try {
       setIsExporting(true);
-      toast.loading("Generating your career card image...");
+      toast.loading("Generating your career card PDF...");
 
       // Capture the preview card as canvas
       const canvas = await html2canvas(previewRef.current, {
@@ -186,19 +187,24 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
         useCORS: true,
       });
 
-      // Convert to blob and download
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.download = `${cardData.profile.name || "career-card"}_${new Date().getTime()}.png`;
-          link.href = url;
-          link.click();
-          URL.revokeObjectURL(url);
-          
-          toast.success("Career card downloaded successfully!");
-        }
-      }, "image/png");
+      // Get canvas dimensions
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      // Create PDF
+      const pdf = new jsPDF({
+        orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      
+      // Download PDF
+      pdf.save(`${cardData.profile.name || "career-card"}_${new Date().getTime()}.pdf`);
+      
+      toast.success("Career card PDF downloaded successfully!");
     } catch (error) {
       logger.error("Export error:", error);
       toast.error("Failed to export career card. Please try again.");
@@ -308,7 +314,7 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
             </Button>
             <Button onClick={handleExport} variant="outline" className="gap-2" disabled={isExporting}>
               <Download className="h-4 w-4" />
-              {isExporting ? "Exporting..." : "Export PNG"}
+              {isExporting ? "Exporting..." : "Export PDF"}
             </Button>
           </div>
         </div>
