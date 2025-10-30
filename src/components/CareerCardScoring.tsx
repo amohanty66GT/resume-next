@@ -52,7 +52,7 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
     try {
       const fileType = file.type;
       
-      // For PDF files, extract text first
+      // For PDF files, convert to images and process with vision AI
       if (fileType === "application/pdf") {
         console.log("Processing PDF file:", file.name);
         
@@ -62,31 +62,37 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         console.log("PDF parsed, pages:", pdf.numPages);
         
-        let fullText = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items.map((item: any) => item.str).join(' ');
-          fullText += pageText + '\n';
-        }
+        // Convert first page to image
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 2.0 });
         
-        console.log("Extracted text length:", fullText.length);
-        console.log("First 200 chars:", fullText.substring(0, 200));
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error("Could not get canvas context");
         
-        if (!fullText.trim()) {
-          throw new Error("No text could be extracted from the PDF. Please ensure the PDF contains readable text.");
-        }
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        
+        const renderContext = {
+          canvasContext: context,
+          viewport: viewport,
+        };
+        await page.render(renderContext).promise;
+        
+        // Convert canvas to base64
+        const imageBase64 = canvas.toDataURL('image/png');
+        console.log("Converted PDF to image, size:", imageBase64.length);
         
         const { data, error } = await supabase.functions.invoke("parse-resume", {
-          body: { resumeText: fullText.trim() },
+          body: { imageData: imageBase64 },
         });
 
         if (error) {
           console.error("Parse resume error:", error);
-          throw new Error(error.message || "Failed to parse resume");
+          throw new Error(error.message || "Failed to parse career card");
         }
         
-        console.log("Parsed resume data:", data);
+        console.log("Parsed career card data:", data);
         
         // Convert parsed data to full CareerCardData format
         const cardData: CareerCardData = {
@@ -98,29 +104,64 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
             portfolioUrl: "",
           },
           experience: data.experience || [],
-          frameworks: [],
-          projects: [],
-          codeShowcase: [],
-          pastimes: [],
-          stylesOfWork: [],
-          greatestImpacts: [],
+          frameworks: data.frameworks || [],
+          projects: data.projects || [],
+          codeShowcase: data.codeShowcase || [],
+          pastimes: data.pastimes || [],
+          stylesOfWork: data.stylesOfWork || [],
+          greatestImpacts: data.greatestImpacts || [],
           theme: "blue",
         };
         
         setUploadedCardData(cardData);
         toast({
           title: "File Uploaded",
-          description: `Career card parsed successfully with ${data.experience?.length || 0} experiences`,
+          description: `Career card parsed successfully`,
         });
       } else if (fileType.startsWith("image/")) {
-        toast({
-          title: "Image Upload",
-          description: "Image parsing is not yet supported. Please upload a PDF file.",
-          variant: "destructive",
-        });
-        setUploadedFile(null);
+        // Handle direct image uploads
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const imageBase64 = event.target?.result as string;
+          
+          const { data, error } = await supabase.functions.invoke("parse-resume", {
+            body: { imageData: imageBase64 },
+          });
+
+          if (error) {
+            console.error("Parse resume error:", error);
+            throw new Error(error.message || "Failed to parse career card");
+          }
+          
+          const cardData: CareerCardData = {
+            profile: {
+              name: data.profile?.name || "",
+              title: data.profile?.title || "",
+              location: data.profile?.location || "",
+              imageUrl: "",
+              portfolioUrl: "",
+            },
+            experience: data.experience || [],
+            frameworks: data.frameworks || [],
+            projects: data.projects || [],
+            codeShowcase: data.codeShowcase || [],
+            pastimes: data.pastimes || [],
+            stylesOfWork: data.stylesOfWork || [],
+            greatestImpacts: data.greatestImpacts || [],
+            theme: "blue",
+          };
+          
+          setUploadedCardData(cardData);
+          toast({
+            title: "File Uploaded",
+            description: `Career card parsed successfully`,
+          });
+          setIsUploading(false);
+        };
+        reader.readAsDataURL(file);
+        return;
       } else {
-        throw new Error("Unsupported file type. Please upload a PDF file.");
+        throw new Error("Unsupported file type. Please upload a PDF or image file.");
       }
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -227,21 +268,21 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
             Score Your Career Card
           </CardTitle>
           <CardDescription>
-            Upload your <strong>original resume</strong> (text-based PDF), provide job details, and get AI-powered feedback on alignment
+            Upload your career card image, provide job details, and get AI-powered feedback on alignment
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="career-card">Upload Your Resume (Text-based PDF)</Label>
+            <Label htmlFor="career-card">Upload Your Career Card (PDF or Image)</Label>
             <p className="text-xs text-muted-foreground">
-              Note: Upload your original resume PDF, not the exported career card image
+              Upload your exported career card as a PDF or image
             </p>
             <div className="flex items-center gap-4">
               <div className="flex-1">
                 <Input
                   id="career-card"
                   type="file"
-                  accept=".pdf"
+                  accept=".pdf,image/*"
                   onChange={handleFileUpload}
                   disabled={isUploading}
                   className="cursor-pointer"
