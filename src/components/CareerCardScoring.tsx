@@ -227,18 +227,21 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
             Score Your Career Card
           </CardTitle>
           <CardDescription>
-            Get AI-powered feedback on how well your career card aligns with a specific role and company
+            Upload your <strong>original resume</strong> (text-based PDF), provide job details, and get AI-powered feedback on alignment
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="career-card">Upload Career Card (PDF or Image)</Label>
+            <Label htmlFor="career-card">Upload Your Resume (Text-based PDF)</Label>
+            <p className="text-xs text-muted-foreground">
+              Note: Upload your original resume PDF, not the exported career card image
+            </p>
             <div className="flex items-center gap-4">
               <div className="flex-1">
                 <Input
                   id="career-card"
                   type="file"
-                  accept=".pdf,image/*"
+                  accept=".pdf"
                   onChange={handleFileUpload}
                   disabled={isUploading}
                   className="cursor-pointer"
