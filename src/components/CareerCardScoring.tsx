@@ -52,17 +52,12 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
     try {
       const fileType = file.type;
       
-      // For PDF files, convert to images and process with vision AI
+      // For PDF files, convert to image and process with vision AI
       if (fileType === "application/pdf") {
         console.log("Processing PDF file:", file.name);
         
         const arrayBuffer = await file.arrayBuffer();
-        console.log("PDF loaded, size:", arrayBuffer.byteLength);
-        
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        console.log("PDF parsed, pages:", pdf.numPages);
-        
-        // Convert first page to image
         const page = await pdf.getPage(1);
         const viewport = page.getViewport({ scale: 2.0 });
         
@@ -73,36 +68,25 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
         canvas.width = viewport.width;
         canvas.height = viewport.height;
         
-        const renderContext = {
+        await page.render({
           canvasContext: context,
           viewport: viewport,
-        };
-        await page.render(renderContext).promise;
+        } as any).promise;
         
-        // Convert canvas to base64
         const imageBase64 = canvas.toDataURL('image/png');
-        console.log("Converted PDF to image, size:", imageBase64.length);
+        console.log("Converted PDF to image");
         
         const { data, error } = await supabase.functions.invoke("parse-resume", {
           body: { imageData: imageBase64 },
         });
 
         if (error) {
-          console.error("Parse resume error:", error);
+          console.error("Parse error:", error);
           throw new Error(error.message || "Failed to parse career card");
         }
         
-        console.log("Parsed career card data:", data);
-        
-        // Convert parsed data to full CareerCardData format
         const cardData: CareerCardData = {
-          profile: {
-            name: data.profile?.name || "",
-            title: data.profile?.title || "",
-            location: data.profile?.location || "",
-            imageUrl: "",
-            portfolioUrl: "",
-          },
+          profile: data.profile || { name: "", title: "", location: "", imageUrl: "", portfolioUrl: "" },
           experience: data.experience || [],
           frameworks: data.frameworks || [],
           projects: data.projects || [],
@@ -116,10 +100,9 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
         setUploadedCardData(cardData);
         toast({
           title: "File Uploaded",
-          description: `Career card parsed successfully`,
+          description: "Career card parsed successfully",
         });
       } else if (fileType.startsWith("image/")) {
-        // Handle direct image uploads
         const reader = new FileReader();
         reader.onload = async (event) => {
           const imageBase64 = event.target?.result as string;
@@ -129,18 +112,12 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
           });
 
           if (error) {
-            console.error("Parse resume error:", error);
+            console.error("Parse error:", error);
             throw new Error(error.message || "Failed to parse career card");
           }
           
           const cardData: CareerCardData = {
-            profile: {
-              name: data.profile?.name || "",
-              title: data.profile?.title || "",
-              location: data.profile?.location || "",
-              imageUrl: "",
-              portfolioUrl: "",
-            },
+            profile: data.profile || { name: "", title: "", location: "", imageUrl: "", portfolioUrl: "" },
             experience: data.experience || [],
             frameworks: data.frameworks || [],
             projects: data.projects || [],
@@ -154,7 +131,7 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
           setUploadedCardData(cardData);
           toast({
             title: "File Uploaded",
-            description: `Career card parsed successfully`,
+            description: "Career card parsed successfully",
           });
           setIsUploading(false);
         };
