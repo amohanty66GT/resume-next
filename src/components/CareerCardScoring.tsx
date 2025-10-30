@@ -137,6 +137,11 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
   };
 
   const handleScore = async () => {
+    console.log("handleScore called");
+    console.log("uploadedCardData:", uploadedCardData);
+    console.log("companyDescription:", companyDescription);
+    console.log("roleDescription:", roleDescription);
+    
     if (!companyDescription.trim() || !roleDescription.trim()) {
       toast({
         title: "Missing Information",
@@ -161,6 +166,12 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
     setScoringResult(null);
 
     try {
+      console.log("Invoking score-career-card function with:", {
+        careerCardData: cardToScore,
+        companyDescription,
+        roleDescription,
+      });
+      
       const { data, error } = await supabase.functions.invoke("score-career-card", {
         body: {
           careerCardData: cardToScore,
@@ -169,7 +180,13 @@ export const CareerCardScoring = ({ cardData: initialCardData }: CareerCardScori
         },
       });
 
-      if (error) throw error;
+      console.log("Function response - data:", data);
+      console.log("Function response - error:", error);
+
+      if (error) {
+        console.error("Function invocation error:", error);
+        throw error;
+      }
 
       setScoringResult(data);
       toast({
