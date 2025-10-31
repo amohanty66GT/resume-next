@@ -187,19 +187,41 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
         useCORS: true,
       });
 
-      // Get canvas dimensions
-      const imgWidth = 210; // A4 width in mm
+      // A4 dimensions
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = 297; // A4 height in mm
+      const imgWidth = pdfWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
       // Create PDF
       const pdf = new jsPDF({
-        orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
+        orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
       
       const imgData = canvas.toDataURL('image/png');
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      
+      // If content fits on one page, add it directly
+      if (imgHeight <= pdfHeight) {
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      } else {
+        // Split content across multiple pages
+        let heightLeft = imgHeight;
+        let position = 0;
+        
+        // Add first page
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+        
+        // Add remaining pages
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pdfHeight;
+        }
+      }
       
       // Download PDF
       pdf.save(`${cardData.profile.name || "career-card"}_${new Date().getTime()}.pdf`);
