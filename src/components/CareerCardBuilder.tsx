@@ -182,7 +182,7 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
       // Capture the preview card as canvas
       const canvas = await html2canvas(previewRef.current, {
         backgroundColor: "#ffffff",
-        scale: 2, // Higher quality
+        scale: 1.2, // Balanced quality and file size
         logging: false,
         useCORS: true,
       });
@@ -200,25 +200,25 @@ const CareerCardBuilder = ({ userId }: CareerCardBuilderProps) => {
         format: 'a4'
       });
       
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/jpeg', 0.85); // JPEG with 85% quality for smaller file size
       
       // If content fits on one page, add it directly
       if (imgHeight <= pdfHeight) {
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
       } else {
         // Split content across multiple pages
         let heightLeft = imgHeight;
         let position = 0;
         
         // Add first page
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
         
         // Add remaining pages
         while (heightLeft > 0) {
           position = heightLeft - imgHeight;
           pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
           heightLeft -= pdfHeight;
         }
       }
