@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, FileText, Upload, Users, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Sparkles, FileText, Target, Users, CheckCircle2 } from "lucide-react";
 
 
 const Landing = () => {
@@ -88,9 +88,9 @@ const Landing = () => {
               description="Capture your complete professional story with dedicated sections for experience, projects, impacts, frameworks, and more."
             />
             <FeatureCard 
-              icon={Upload}
-              title="Easy Import"
-              description="Import your existing resume or LinkedIn profile to quickly populate your career card with your experience and skills."
+              icon={Target}
+              title="AI-Powered Scoring"
+              description="Get instant feedback on how well your career card matches specific roles with our intelligent scoring system."
             />
             <FeatureCard 
               icon={Users}
