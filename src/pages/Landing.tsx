@@ -38,14 +38,9 @@ const Landing = () => {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>
-                  Sign In
-                </Button>
-                <Button onClick={() => navigate("/auth")} size="sm">
-                  Get Started
-                </Button>
-              </>
+              <Button onClick={() => navigate("/auth")} size="sm">
+                Get Started
+              </Button>
             )}
           </div>
         </div>
