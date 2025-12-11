@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, FileText, Target, Users, CheckCircle2 } from "lucide-react";
-import referenceTemplate from "@/assets/reference-template.png";
+
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -46,38 +46,25 @@ const Landing = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
       <section className="pt-32 pb-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary text-sm font-medium text-muted-foreground">
-                <Sparkles className="h-4 w-4 text-accent" />
-                Professional Career Profiles
-              </div>
-              <h1 className="editorial-heading text-5xl lg:text-6xl font-semibold leading-[1.1] text-foreground">
-                Showcase your career story beautifully
-              </h1>
-              <p className="editorial-body text-lg text-muted-foreground max-w-lg">
-                Create stunning, professional career cards that highlight your experience, 
-                projects, and unique value. Stand out to recruiters with a polished, 
-                shareable portfolio.
-              </p>
-              <Button size="lg" onClick={handleGetStarted} className="h-12 px-8">
-                Create Your Card
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="space-y-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary text-sm font-medium text-muted-foreground">
+              <Sparkles className="h-4 w-4 text-accent" />
+              Professional Career Profiles
             </div>
-            <div className="relative flex justify-center">
-              <div className="absolute -inset-4 bg-[#1a1f2e]/20 rounded-2xl blur-2xl" />
-              <div className="relative bg-[#1a1f2e] p-4 rounded-xl overflow-hidden max-w-sm">
-                <img 
-                  src={referenceTemplate} 
-                  alt="Career Card Example" 
-                  className="w-full rounded-lg"
-                />
-              </div>
-            </div>
+            <h1 className="editorial-heading text-5xl lg:text-6xl font-semibold leading-[1.1] text-foreground">
+              Showcase your career story beautifully
+            </h1>
+            <p className="editorial-body text-lg text-muted-foreground max-w-2xl mx-auto">
+              Create stunning, professional career cards that highlight your experience, 
+              projects, and unique value. Stand out to recruiters with a polished, 
+              shareable portfolio.
+            </p>
+            <Button size="lg" onClick={handleGetStarted} className="h-12 px-8">
+              Create Your Card
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
           </div>
         </div>
       </section>
