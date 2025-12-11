@@ -4,9 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import CareerCardBuilder from "@/components/CareerCardBuilder";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, ArrowLeft } from "lucide-react";
 
-const Index = () => {
+const Builder = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -57,6 +57,12 @@ const Index = () => {
 
   return (
     <div className="relative">
+      <div className="absolute top-4 left-4 z-10">
+        <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Home
+        </Button>
+      </div>
       <div className="absolute top-4 right-4 z-10">
         <Button variant="outline" size="sm" onClick={handleLogout}>
           <LogOut className="h-4 w-4 mr-2" />
@@ -68,4 +74,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Builder;
