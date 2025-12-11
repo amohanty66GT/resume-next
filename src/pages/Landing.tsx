@@ -68,15 +68,10 @@ const Landing = () => {
                 projects, and unique value. Stand out to recruiters with a polished, 
                 shareable portfolio.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" onClick={handleGetStarted} className="h-12 px-8">
-                  Create Your Card
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-                <Button variant="outline" size="lg" className="h-12 px-8" onClick={() => navigate("/score")}>
-                  Score Your Card
-                </Button>
-              </div>
+              <Button size="lg" onClick={handleGetStarted} className="h-12 px-8">
+                Create Your Card
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
             </div>
             <div className="relative">
               <div className="absolute -inset-4 bg-gradient-to-r from-accent/10 to-accent/5 rounded-2xl blur-2xl" />
