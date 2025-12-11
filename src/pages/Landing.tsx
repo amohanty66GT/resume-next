@@ -73,9 +73,9 @@ const Landing = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
-            <div className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-r from-accent/10 to-accent/5 rounded-2xl blur-2xl" />
-              <div className="relative vesper-card p-2 rounded-xl overflow-hidden">
+            <div className="relative flex justify-center">
+              <div className="absolute -inset-4 bg-[#1a1f2e]/20 rounded-2xl blur-2xl" />
+              <div className="relative bg-[#1a1f2e] p-4 rounded-xl overflow-hidden max-w-sm">
                 <img 
                   src={referenceTemplate} 
                   alt="Career Card Example" 
