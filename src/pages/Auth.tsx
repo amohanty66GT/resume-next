@@ -35,7 +35,7 @@ export default function Auth() {
         });
         if (error) throw error;
         toast.success("Logged in successfully!");
-        navigate("/");
+        navigate("/builder");
       } else {
         const redirectUrl = `${window.location.origin}/`;
         const { error } = await supabase.auth.signUp({
